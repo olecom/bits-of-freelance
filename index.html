@@ -1,0 +1,43 @@
+<html>
+<head>
+<meta charset="utf-8"/>
+<link rel="icon" type="image/x-icon" href="https://github.com/favicon.ico" />
+<title>topo.by: фильтрация и навигация</title></head>
+<body style='font-size:14pt'>
+<ul>
+<li><a href='#antelfashion'>[Апрель 2011] PHP/HTML: Modx 1 + Easy2 Gallery "Цветная картинка к основной"</a></li>
+<li><a href='#topo'>[Ноябрь 2011] JavaScript: jQuery + Drupal "Память чекбоксов и навигация"</a></li>
+</ul>
+
+<center><a name='antelfashion'></a><h1>"Цветная картинка к основной" (antelfashion.by)</h1></center>
+<a href='http://www.weblancer.net/projects/253853.html'>Оригинальная ссылка</a><br/><br/>
+Всем добрый день!<br/>
+<br/>
+Есть галерея Easy2 на MODx: http://www.antelfashion.by/catalog/pugovicy/plastm.... Некоторые изображения должны иметь цветной вариант пуговицы.<br/>
+<br/>
+Задача такая: если у изображения есть вариант в цвете (отдельное изображение), то его нужно прицепить к основному изображению и оно должно выводиться лайт-боксе при клике на кнопочку color — http://www.antelfashion.by/color.html (пример работы, изображение пока не подцепляется).<br/>
+<br/>
+Если же дополнительного изображения нет, то color не отображается. Т.е. выводиться эскиз основного изображения и всё.<br/>
+<br/>
+
+<h2>Реализация:</h2>
+Админка, рабочий плагин сайта (в инсталляционной форме), снипет (какой-то), html шаблон, картинка для кнопки. В общем оказалось много быдлокодинга.
+
+<center><a name='topo'></a><h1>"Память чекбоксов и навигация" (TOPO.BY)</h1></center>
+<div>
+Есть вот такой сайт - http://topo.by/catalogue/female/0<br/>
+<center><img src='images/topo-01.png' style='border:2px solid black;'><br/></center>
+В каталоге 2 линейки, влияющие на отображение товаров:<br/>
+1.	Выставляются настройки через чекбоксы<br/>
+<center><img src='images/topo-02.png' style='border:2px solid black;'>
+<img src='images/topo-03.png' style='border:2px solid black;'><br/></center>
+2.	Постраничная навигация<br/>
+При клике по модели - переход на детальную страницу<br/>
+<center><img src='images/topo-04.png' style='border:2px solid black;'><br/><br/></center>
+Нужно сделать так, чтобы при клике по кнопке "Каталог", пользователь возвращался в раздел каталога с теми же настройками (чекбоксы) и на ту же страницу, с которой он перешёл для просмотра модели.<br/>
+Сейчас обнуляются и чекбоксы и пагинация. Т.е. чекбоксы сбрасываются, а постраничная навигация начинается с нуля.
+</div>
+<h2>Реализация:</h2>
+Оказалось достаточно поковырять один JavaScript файл, находящийся в очень загадочном месте: <code>sites/all/themes/front/js/script.js</code>
+</body>
+</html>
