@@ -155,15 +155,15 @@ type = $(".b-catalog-body").attr('type');
 var a, m;
  country  = new Array();
  category  = new Array();
-
+ sex       = new Array();
+ //sex       = new Array('male', 'female');
 if (type == "female") {
 m = decodeURIComponent(document.cookie).match(/categoryfemale=([^&]+)/);
 if (m != null) { //ole: mem
     a = m[1].split(/,/)
     if (a.length > 0)
         category = a;
-}
-
+} else { country.push("1") ;}
 m = decodeURIComponent(document.cookie).match(/countryfemale=([^&]+)/);
 if (m != null) {
     a = m[1].split(/,/)
@@ -179,7 +179,7 @@ if (m != null) { //ole: mem
     a = m[1].split(/,/)
     if (a.length > 0)
         category = a;
-}
+} else { country.push("1") ;}
 
 m = decodeURIComponent(document.cookie).match(/countrymale=([^&]+)/);
 if (m != null) {
@@ -188,9 +188,32 @@ if (m != null) {
         country = a;
     } else { country.push("7"); country.push("8"); }
 } else { country.push("7"); country.push("8"); }
-}
+} else {
+if (type == "available") {
+m = decodeURIComponent(document.cookie).match(/categoryavailable=([^&]+)/);
+if (m != null) { //ole: mem
+    a = m[1].split(/,/)
+    if (a.length > 0) {
+        category = a;
+    } else { category.push("1") ;}
+} else { category.push("1") ;}
+m = decodeURIComponent(document.cookie).match(/countryavailable=([^&]+)/);
+if (m != null) {
+    a = m[1].split(/,/)
+    if (a.length > 0) {
+        country = a;
+    } else { country.push("7"); country.push("8"); }
+} else { country.push("7"); country.push("8"); }
 
-  sex       = new Array('male', 'female');
+m = decodeURIComponent(document.cookie).match(/sexavailable=([^&]+)/);
+if (m != null) {
+    a = m[1].split(/,/)
+    if (a.length > 0) {
+        sex = a;
+    } else { sex.push('male'); sex.push('female'); }
+} else { sex.push('male'); sex.push('female'); }
+}
+}
   brand     = new Array();
   years     = new Array();
   page      = 0;
@@ -200,8 +223,8 @@ if (m != null) {
   $(".b-filter_categories input").each(function () {
 /*m = decodeURIComponent(document.cookie).match(/categorymale=([^&]+)/);
 if (m != null) { //ole: mem
-    $(this).removeAttr("checked");
 }*/
+$(this).removeAttr("checked");
 if(0<category.length) { // ole: mem
  for(var i=0; i<category.length; i++)
   if(category[i] == $(this).val()) {
@@ -240,6 +263,27 @@ if(0<country.length) { // ole: mem
     catalogGet();
   });
 
+  $(".b-filter_sex input").each(function () {
+$(this).removeAttr("checked"); //ole:remove std val
+if(0<sex.length) { // ole: mem
+ for(var i=0; i<sex.length; i++)
+  if(sex[i] == $(this).val()) {
+    $(this).attr('checked','checked');
+    break;
+ }
+} else {
+    if ($(this).attr("checked")) {
+      sex.push($(this).val());
+    } else {
+      for(var i=0; i<sex.length; i++) {
+        if(sex[i] == $(this).val()) sex.splice(i, 1);
+      }
+    }
+}
+    catalogGet();
+  });
+
+
   $(".b-filter_categories input").click(function () {
     if ($(this).attr("checked")) {
       category.push($(this).val());
@@ -247,6 +291,32 @@ if(0<country.length) { // ole: mem
       for(var i=0; i<category.length; i++) {
         if(category[i] == $(this).val()) category.splice(i, 1);
       }
+    }
+
+    if (0 == category.length) { //ole: category default -- 1
+        category.push("1");
+
+  $(".b-filter_categories input").each(function () {
+/*m = decodeURIComponent(document.cookie).match(/categorymale=([^&]+)/);
+if (m != null) { //ole: mem
+}*/
+$(this).removeAttr("checked");
+if(0<category.length) { // ole: mem
+ for(var i=0; i<category.length; i++)
+  if(category[i] == $(this).val()) {
+    $(this).attr('checked','checked');
+    break;
+ }
+} else {
+  	if ($(this).attr("checked")) {
+      category.push($(this).val());
+    } else {
+      for(var i=0; i<category.length; i++) {
+        if(category[i] == $(this).val()) category.splice(i, 1);
+      }
+    }
+}
+    });
     }
     catalogGet(0);
   });
@@ -259,7 +329,29 @@ if(0<country.length) { // ole: mem
         if(sex[i] == $(this).val()) sex.splice(i, 1);
       }
     }
-    catalogGet();
+
+    if (0 == sex.length) { //ole: sex default -- full set
+        sex.push('male'); sex.push('female');
+  $(".b-filter_sex input").each(function () {
+$(this).removeAttr("checked"); //ole:remove std val
+if(0<sex.length) { // ole: mem
+ for(var i=0; i<sex.length; i++)
+  if(sex[i] == $(this).val()) {
+    $(this).attr('checked','checked');
+    break;
+ }
+} else {
+    if ($(this).attr("checked")) {
+      sex.push($(this).val());
+    } else {
+      for(var i=0; i<sex.length; i++) {
+        if(sex[i] == $(this).val()) sex.splice(i, 1);
+      }
+    }
+}
+    });
+    }
+    catalogGet(0);
   });
 
   $(".b-filter_countries input").click(function () {
@@ -611,10 +703,11 @@ var m = decodeURIComponent(document.cookie).match(/[/]([^/]*)[?]/);
 
 document.cookie = "category"+type+"="+encodeURIComponent(category+"&"+"page"+type+"="+page)+"; path=/";
 document.cookie = "country"+type+"="+encodeURIComponent(country+"&"+"page"+type+"="+page)+"; path=/";
-/*
-console.log("coo: " + decodeURIComponent(document.cookie));
-console.log("country = " + country + "; c = " + category);
-*/
+document.cookie = "sex"+type+"="+encodeURIComponent(sex+"&"+"page"+type+"="+page)+"; path=/";
+
+//console.log("coo: " + decodeURIComponent(document.cookie));
+/*console.log("country = " + country + "; c = " + category);*/
+
   $.ajax({
     url: url,
     success: function(data) {
