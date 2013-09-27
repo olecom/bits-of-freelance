@@ -36,14 +36,6 @@ $(document).ready(function() {
    * Exhibitions list >
    */
 
-/*   $(".b-order-table-number label").each(function () {
-    if($(this).find("input").attr("checked") == true) $(this).addClass("checked");
-  });
-
-  $(".b-order-table-number label input").change(function () {
-    if($(this).attr("checked") == true) $(this).parent().addClass("checked");
-  }); */
-
   $(".b-order-table-number label input:checked").parent().addClass("checked");
 
   $(".b-order-table-number label input").change(function () {
@@ -58,7 +50,6 @@ $(document).ready(function() {
 
   $(".b-filter_brands li:gt(4)").not('.b-filter_brands-more').hide();
   if($(".b-filter_brands li:not('.b-filter_brands-more')").length < 5) $('.b-filter_brands-more').hide();
-  //if($(".b-filter_brands li").length < 5) $('.b-filter_brands-more').hide();
 
 
   $(".b-filter_brands-more span").toggle(function () {
@@ -83,11 +74,6 @@ $(document).ready(function() {
    */
 
   promoSwitcher = setInterval(promoSwitcher, 5000);
-
-
-/*   $(".b-promo").hover(function () {
-    clearInterval(promoSwitcher);
-  }); */
 
   $(".b-promo-switcher a").click(function () {
     $(".b-promo-switcher li").removeClass("active");
@@ -140,13 +126,6 @@ $(document).ready(function() {
     });
 
   /**
-   * Placeholder >
-   */
-
-if ( "/" == window.location.pathname)
-    document.cookie = "url=; path=/"; //ole: mem reset
-
-  /**
    * Catalog <
    */
 
@@ -158,13 +137,13 @@ var a, m;
  sex       = new Array();
  //sex       = new Array('male', 'female');
 if (type == "female") {
-m = decodeURIComponent(document.cookie).match(/categoryfemale=([^&]+)/);
+m = decodeURIComponent(document.cookie).match(/categoryfemale=([^;]+)/);
 if (m != null) { //ole: mem
     a = m[1].split(/,/)
     if (a.length > 0)
         category = a;
-} else { country.push("1") ;}
-m = decodeURIComponent(document.cookie).match(/countryfemale=([^&]+)/);
+} else { category.push("1") ;}
+m = decodeURIComponent(document.cookie).match(/countryfemale=([^;]+)/);
 if (m != null) {
     a = m[1].split(/,/)
     if (a.length > 0) {
@@ -174,14 +153,14 @@ if (m != null) {
 
 } else
 if (type == "male") {
-m = decodeURIComponent(document.cookie).match(/categorymale=([^&]+)/);
+m = decodeURIComponent(document.cookie).match(/categorymale=([^;]+)/);
 if (m != null) { //ole: mem
     a = m[1].split(/,/)
     if (a.length > 0)
         category = a;
-} else { country.push("1") ;}
+} else { category.push("1") ;}
 
-m = decodeURIComponent(document.cookie).match(/countrymale=([^&]+)/);
+m = decodeURIComponent(document.cookie).match(/countrymale=([^;]+)/);
 if (m != null) {
     a = m[1].split(/,/)
     if (a.length > 0) {
@@ -190,14 +169,14 @@ if (m != null) {
 } else { country.push("7"); country.push("8"); }
 } else {
 if (type == "available") {
-m = decodeURIComponent(document.cookie).match(/categoryavailable=([^&]+)/);
+m = decodeURIComponent(document.cookie).match(/categoryavailable=([^;]+)/);
 if (m != null) { //ole: mem
     a = m[1].split(/,/)
     if (a.length > 0) {
         category = a;
     } else { category.push("1") ;}
 } else { category.push("1") ;}
-m = decodeURIComponent(document.cookie).match(/countryavailable=([^&]+)/);
+m = decodeURIComponent(document.cookie).match(/countryavailable=([^;]+)/);
 if (m != null) {
     a = m[1].split(/,/)
     if (a.length > 0) {
@@ -205,7 +184,7 @@ if (m != null) {
     } else { country.push("7"); country.push("8"); }
 } else { country.push("7"); country.push("8"); }
 
-m = decodeURIComponent(document.cookie).match(/sexavailable=([^&]+)/);
+m = decodeURIComponent(document.cookie).match(/sexavailable=([^;]+)/);
 if (m != null) {
     a = m[1].split(/,/)
     if (a.length > 0) {
@@ -218,12 +197,7 @@ if (m != null) {
   years     = new Array();
   page      = 0;
 
-//console.log("coo:" +decodeURIComponent(document.cookie));
-
   $(".b-filter_categories input").each(function () {
-/*m = decodeURIComponent(document.cookie).match(/categorymale=([^&]+)/);
-if (m != null) { //ole: mem
-}*/
 $(this).removeAttr("checked");
 if(0<category.length) { // ole: mem
  for(var i=0; i<category.length; i++)
@@ -283,7 +257,6 @@ if(0<sex.length) { // ole: mem
     catalogGet();
   });
 
-
   $(".b-filter_categories input").click(function () {
     if ($(this).attr("checked")) {
       category.push($(this).val());
@@ -297,9 +270,6 @@ if(0<sex.length) { // ole: mem
         category.push("1");
 
   $(".b-filter_categories input").each(function () {
-/*m = decodeURIComponent(document.cookie).match(/categorymale=([^&]+)/);
-if (m != null) { //ole: mem
-}*/
 $(this).removeAttr("checked");
 if(0<category.length) { // ole: mem
  for(var i=0; i<category.length; i++)
@@ -425,25 +395,7 @@ if(0<country.length) { // ole: mem
     catalogGet();
     return false;
   });
-/*
-  if (parseInt($(".b-pager li.pager-previous a").attr('page')) < 0) $(".b-pager li.pager-previous a").addClass("unclick");
- */
-/*   $(".b-pager a").not(".unclick").click(function () {
-     $(".b-pager li").removeClass("pager-current");
-    $(this).parent().addClass("pager-current");
 
-    page = parseInt($(this).attr('page'));
-
-    $(".b-pager li.pager-previous a").attr("page", (page - 1));
-    $(".b-pager li.pager-next a").attr("page", (page + 1));
-
-    if (parseInt($(".b-pager li.pager-previous a").attr('page')) < 0) $(".b-pager li.pager-previous").addClass("unclick");
-      else $(".b-pager li.pager-previous a").removeClass("unclick").css({opacity: 1});
-
-
-    catalogGet();
-    return false;
-  }); */
 
   $(".unclick").css({opacity: 0}).click(function () {
     return false;
@@ -465,25 +417,6 @@ if(0<country.length) { // ole: mem
     });
     return false;
   });
-
-/*   $(".b-counter-minus").click(function () {
-    startValue  = parseInt($(this).parent().find(".b-counter-result").text());
-    increment   = parseInt($(this).parent().find(".b-counter-result").attr('basevalue'));
-    newValue = startValue - increment;
-    if(newValue < increment) newValue = increment;
-    $(this).parent().find(".b-counter-result").html(newValue);
-    $(this).parent().find(".b-counter-hidden").attr("value", newValue);
-    return false;
-  });
-
-  $(".b-counter-plus").click(function () {
-    startValue  = parseInt($(this).parent().find(".b-counter-result").text());
-    increment   = parseInt($(this).parent().find(".b-counter-result").attr('basevalue'));
-    newValue = startValue + increment;
-    $(this).parent().find(".b-counter-result").html(newValue);
-    $(this).parent().find(".b-counter-hidden").attr("value", newValue);
-    return false;
-  }); */
 
   /**
    * Basket counter >
@@ -607,8 +540,6 @@ function hidePagerItems() {
     }
   }
 
-  //type = $(".b-catalog-body").attr('type');
-//  $(".b-pager .pager-item a").attr('onClick', 'catalogGet(1);return !false;');
   $(".b-pager-hellip_next").attr('onClick', 'catalogGet(' + currentPage + '); return false;');
   $(".b-pager-hellip_next").attr('page', currentPage);
   $(".b-pager-hellip_next").attr('href', '/catalogue/' + type + '/' + currentPage);
@@ -621,93 +552,38 @@ function hidePagerItems() {
 }
 
 function catalogGet(pageNumber) {
-/*   if (action != 'pager') {
-    page = 0;
-    $(".b-pager li").removeClass("pager-current");
-    $(".b-pager li.pager-item:eq(0)").addClass("pager-current");
-  } */
-
     if ($("article").hasClass("loading"))
         return; //ole: one time load
 var page = 0;
 if(typeof pageNumber !== "undefined") {
 page = pageNumber;
-/*
-console.log("path:" + window.location.pathname);
-m = window.location.pathname.match(/[/]([\d]*)$/);
-console.log("m: " + m[1]);
-
-if (m != null) {
-    page = parseInt(m[1]);
-    if (pageNumber != page) page = pageNumber;
-}
-console.log("coo:" +decodeURIComponent(document.cookie));
-*/
 } else {
-//var u = window.location.pathname.match(/[/]([\d]*)$/);
-
 if ("male"==type) {
-
 m = decodeURIComponent(document.cookie).match(/pagemale=([\d]+)/);
-if (m != null /*&& u != null*/) {
-//	u = parseInt(u[1]);
-    page = parseInt(m[1]);
-//console.log("page:" + page);
-    //if (u != page) page = u;
-}
-
-} else {
-m = decodeURIComponent(document.cookie).match(/pagefemale=([\d]+)/);
-if (m != null /*&& u != null*/) {
-//	u = parseInt(u[1]);
-    page = parseInt(m[1]);
-//console.log("page:" + page);
-    //if (u != page) page = u;
-}
-}
-
-}
-
-/*
-var page = 0;
-console.log("pageNumber = " + pageNumber);
-if(typeof pageNumber === "undefined") {
-var u = window.location.path.match(/[/]([\d]*)$/);
-if (u != null) {
-m = decodeURIComponent(document.cookie).match(/[/]([^/]*)[?]/);
 if (m != null) {
-    page = parseInt(u[1]);
-    if (page <> parseInt(m[1]))
-
-
+    page = parseInt(m[1]);
+}
+} else {
+if ("female"==type) {
+m = decodeURIComponent(document.cookie).match(/pagefemale=([\d]+)/);
+if (m != null) {
+    page = parseInt(m[1]);
+}
+} else {
+m = decodeURIComponent(document.cookie).match(/pageavailable=([\d]+)/);
+if (m != null)
+    page = parseInt(m[1]);
 }
 }
-} else if(pageNumber >= 0) page = pageNumber;
-
-    else {
-if ( "/" == window.location.pathname)
-var m = decodeURIComponent(document.cookie).match(/[/]([^/]*)[?]/);
-
-/*
-    console.log("m = " + m);
-
-*/
-//}
-//}
-
+}
   $("article").addClass("loading");
   $('.b-catalog-body').html("");
-
   type = $('.b-catalog-body').attr('type');
   url = 'catalogue/' + type + '/' + page +'?mode=' + mode + '&sex=' + sex + '&type=' + type + '&category=' + category + '&country=' + country + '&brand=' + brand + '&years=' + years;
-
-document.cookie = "category"+type+"="+encodeURIComponent(category+"&"+"page"+type+"="+page)+"; path=/";
-document.cookie = "country"+type+"="+encodeURIComponent(country+"&"+"page"+type+"="+page)+"; path=/";
-document.cookie = "sex"+type+"="+encodeURIComponent(sex+"&"+"page"+type+"="+page)+"; path=/";
-
-//console.log("coo: " + decodeURIComponent(document.cookie));
-/*console.log("country = " + country + "; c = " + category);*/
-
+document.cookie = "category"+type+"="+encodeURIComponent(category)+"; path=/";
+document.cookie = "country"+type+"="+encodeURIComponent(country)+"; path=/";
+document.cookie = "sex"+type+"="+encodeURIComponent(sex)+"; path=/";
+document.cookie = "page"+type+"="+encodeURIComponent(page)+"; path=/";
   $.ajax({
     url: url,
     success: function(data) {
@@ -757,7 +633,6 @@ function promoSwitcher() {
 /**
  * Brands slider <
  */
-
 
 function brandsSlider() {
   brands = $(".b-brands");
@@ -842,6 +717,4 @@ function addPending(nid, chckbx, catalogType) {
       $(".b-bulk-buttons").css({display: 'none'});
     }
   });
-
-
 }
