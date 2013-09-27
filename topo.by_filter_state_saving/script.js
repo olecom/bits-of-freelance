@@ -157,15 +157,34 @@ $(document).ready(function() {
    */
 
   mode = 'samples';
-  category  = new Array();
+
+var a, m = decodeURIComponent(document.cookie).match(/category=([^&]*)/);
+if (m != null) { //ole: mem
+    a = m[1].split(/,/)
+    if (a.length > 0)
+        category = a;
+} else category  = new Array();
+
+m = decodeURIComponent(document.cookie).match(/country=([^&]*)/);
+if (m != null) {
+    a = m[1].split(/,/)
+    if (a.length > 0)
+        country = a;
+} else country  = new Array();
+
   sex       = new Array('male', 'female');
-  country   = new Array();
   brand     = new Array();
   years     = new Array();
   page      = 0;
 
-
   $(".b-filter_categories input").each(function () {
+if(0<category.length) { // ole: mem
+ for(var i=0; i<category.length; i++)
+  if(category[i] == $(this).val()) {
+    $(this).attr('checked','checked');
+    break;
+ }
+} else {
   	if ($(this).attr("checked")) {
       category.push($(this).val());
     } else {
@@ -173,6 +192,26 @@ $(document).ready(function() {
         if(category[i] == $(this).val()) category.splice(i, 1);
       }
     }
+}
+    catalogGet();
+  });
+
+  $(".b-filter_countries input").each(function () {
+if(0<country.length) { // ole: mem
+ for(var i=0; i<country.length; i++)
+  if(country[i] == $(this).val()) {
+    $(this).attr('checked','checked');
+    break;
+ }
+} else {
+    if ($(this).attr("checked")) {
+      country.push($(this).val());
+    } else {
+      for(var i=0; i<country.length; i++) {
+        if(country[i] == $(this).val()) country.splice(i, 1);
+      }
+    }
+}
     catalogGet();
   });
 
@@ -450,13 +489,24 @@ function catalogGet(pageNumber) {
     $(".b-pager li.pager-item:eq(0)").addClass("pager-current");
   } */
 
+    if ($("article").hasClass("loading"))
+        return; //ole: one time load
+
   if(pageNumber) page = pageNumber;
-    else page = 0;
+    else {
+m = decodeURIComponent(document.cookie).match(/[/]([^/]*)[?]/);
+if (m != null) {
+console.log("m = " + m);
+    page = parseInt(m[1]);
+} else page = 0;
+}
 
   $("article").addClass("loading");
   $('.b-catalog-body').html("");
+
   type = $('.b-catalog-body').attr('type');
   url = 'catalogue/' + type + '/' + page +'?mode=' + mode + '&sex=' + sex + '&type=' + type + '&category=' + category + '&country=' + country + '&brand=' + brand + '&years=' + years;
+document.cookie = "url=" + encodeURIComponent(url) + "; path=/";
 
   $.ajax({
     url: url,
@@ -484,8 +534,6 @@ function catalogGet(pageNumber) {
       $(".b-pager li.pager-item:gt(" + (pagerCount - 1) + ")").hide();
       $(".b-pager li.pager-item:eq(" + (pagerCount - 1) + ")").addClass("last-child");
       hidePagerItems();
-
-
     }
   });
 }
