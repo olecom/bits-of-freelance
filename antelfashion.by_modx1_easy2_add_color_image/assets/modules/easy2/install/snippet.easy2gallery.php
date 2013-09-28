@@ -334,7 +334,7 @@ if ($glib == 'slimbox') {
 }
 if ($glib == 'slimbox2') {
    $modx->regClientCSS($modx->config['base_url'].'assets/libs/slimbox/css/slimbox.css','screen');
-   $modx->regClientStartupScript('http://ajax.googleapis.com/ajax/libs/jquery/1.3.2/jquery.min.js');
+   $modx->regClientStartupScript($modx->config['base_url'].'assets/libs/slimbox/js/jquery.js');
    $modx->regClientStartupScript($modx->config['base_url'].'assets/libs/slimbox/js/slimbox2.js');
 }
 if ($glib == 'lightwindow') {
@@ -441,6 +441,11 @@ if (file_exists($thumb_tpl)) {
 
 while ($l = mysql_fetch_array($res, MYSQL_ASSOC)) {
 
+	//ole: color part
+	if(0 < strrpos($l["filename"], "_color.")) {
+		continue;
+    }
+
     //path to single thumb
     if ($fid) {
         $path=get_path($l['dir_id']);
@@ -456,6 +461,12 @@ while ($l = mysql_fetch_array($res, MYSQL_ASSOC)) {
 
     $pos = strrpos($l['filename'], '.');
     $ext = substr($l['filename'], $pos);
+
+	//ole: color part
+	if(0 < strrpos($l["name"], "_color.")) {
+		$l["id_color"] = preg_replace("/^([^.]*)[.][^|]*[|].*$/", "$1", $l["name"]);
+		$l["name"] = preg_replace("/^[^|]*[|]/", "", $l["name"]);
+    } else { $l["show_color"] = "not_display"; }
 
     $l['title'] = $l['name'];
 

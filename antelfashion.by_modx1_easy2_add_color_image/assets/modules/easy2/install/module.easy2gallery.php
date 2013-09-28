@@ -149,6 +149,7 @@ case 'uploadzip':
 case 'upload':
 
     $j = 0;
+	$pifname="";
     for ($i = 0; $i < count($_FILES['img']['tmp_name']); $i++) {
         if (!is_uploaded_file($_FILES['img']['tmp_name'][$i])) {
             $_SESSION['easy2err'][] = $lng['upload_err'].' ' . $_FILES['img']['name'][$i];
@@ -160,25 +161,66 @@ case 'upload':
             continue;
         }
 
-        if (!mysql_query('INSERT INTO '.$modx->db->config['table_prefix'].'easy2_files(dir_id,filename,size,name,description,date_added) VALUES('.$parent_id.', \''.mysql_real_escape_string($_FILES['img']['name'][$i]).'\', '.(int)$_FILES['img']['size'][$i].', \''.mysql_real_escape_string(htmlspecialchars($_POST['name'][$i])).'\', \''.mysql_real_escape_string(htmlspecialchars($_POST['description'][$i])).'\', NOW())')) {
+		if ($i > 0)  {//sequence + color
+			if(is_numeric($_POST['imcolor'][$i-1])) {
+				$pos = strrpos($pifname, '.');
+				$ext = "_color" . substr($pifname, $pos); //mark file as color version of prev. one
+				$ext = substr($pifname, $pos);
+				$ifname = substr($pifname, 0, $pos) . $ext;
+//print_r($ifname);
+//die("|".$_POST['imcolor']."|");
+			} else {
+				$ifname = $_FILES['img']['name'][$i];
+				$pos = strrpos($ifname, '.');
+				$ext = substr($ifname, $pos);
+			}
+		} else {//single file + color
+
+			if(is_numeric($_POST['imcolor'][0])) {//singe file color
+//print_r($ifname);
+				$ifname = $_POST['name'][0];
+			} else {
+				$ifname = $_FILES['img']['name'][$i];
+			}
+//die("|".$ifname."|");
+			$pos = strrpos($ifname, '.');
+			$ext = substr($ifname, $pos);
+			if(is_numeric($_POST['imcolor'][0])) {
+				$ext = "_color".$ext;
+			}
+		}
+		
+		$pifname=$_FILES['img']['name'][$i];
+
+        if (!mysql_query('INSERT INTO '.$modx->db->config['table_prefix'].'easy2_files(dir_id,filename,size,name,description,date_added) VALUES('.$parent_id.', \''.mysql_real_escape_string($ifname).'\', '.(int)$_FILES['img']['size'][$i].', \''.mysql_real_escape_string(htmlspecialchars($_POST['name'][$i])).'\', \''.mysql_real_escape_string(htmlspecialchars($_POST['description'][$i])).'\', NOW())')) {
             $_SESSION['easy2err'][] = $lng['db_err'].': ' . mysql_error();
             continue;
         }
-
+		
         $id = mysql_insert_id();
 
-        $pos = strrpos($_FILES['img']['name'][$i], '.');
-        $ext = substr($_FILES['img']['name'][$i], $pos);
+	if (0 == $i && is_numeric($_POST['imcolor'][0])){ // add color
+	
+		$name = mysql_query('SELECT name FROM '.$modx->db->config['table_prefix'].'easy2_files WHERE id='.$_POST['imcolor'][0]);
+		//$oldcolor=(int)preg_replace('/^([^|])|.*$/', '\\1', $name)
+		
+		if(!mysql_query('UPDATE '.$modx->db->config['table_prefix'].'easy2_files SET name = \''.$id.$ext.'|'.preg_replace('/^[^|]*|/', '', $name).'\' WHERE id='.$_POST['imcolor'][0])) {
+			$_SESSION['easy2err'][] = $lng['db_err'].': '. mysql_error();
+            continue;
+		}
+	}
 
         $inf = getimagesize($_FILES['img']['tmp_name'][$i]);
         if (($e2g['maxw'] > 0 || $e2g['maxh'] > 0) && ($inf[0] > $e2g['maxw'] || $inf[1] > $e2g['maxh'])) {
             resize_img ($_FILES['img']['tmp_name'][$i], $inf, $e2g['maxw'], $e2g['maxh'], $e2g['maxthq']);
         }
         move_uploaded_file($_FILES['img']['tmp_name'][$i], '../'.$gdir.$id.$ext);
+
         @chmod('../'.$gdir.$id.$ext, 0644);
         $j++;
     }
-    $_SESSION['easy2suc'][] = $j.' '.$lng['files_uploaded'].'.';
+
+    $_SESSION['easy2suc'][] = $j.' '.$lng['files_uploaded'].'.'.$_POST['imcolor'];
 
     header ("Location: ".$index.'&pid='.$_GET['pid']);
     exit();
@@ -593,8 +635,11 @@ $page = empty($_GET['page']) ? '' : $_GET['page'];
 $content = '';
 switch ($page) {
 
+//ole: add color to existing
+case 'add_color':
 
 
+    break;
 // EDIT FILE
 
 case 'edit_file':
@@ -604,7 +649,7 @@ case 'edit_file':
         header ("Location: ".html_entity_decode($_SERVER['HTTP_REFERER'], ENT_NOQUOTES));
         exit();
     }
-
+//ole: name
     if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         if(mysql_query('UPDATE '.$modx->db->config['table_prefix'].'easy2_files SET name = \''.htmlspecialchars($_POST['name'], ENT_QUOTES).'\', description = \''.htmlspecialchars($_POST['description'], ENT_QUOTES).'\', last_modified=NOW() WHERE id='.(int)$_GET['file_id'])) {
             $_SESSION['easy2suc'][] = $lng['updated'];
@@ -655,10 +700,7 @@ case 'edit_file':
 </tr>
 </table>';
 
-
     break;
-
-
 
 // COMMENTS
 
@@ -845,18 +887,23 @@ foreach ($files as $f) {
     $time = filemtime($f);
 
     $name = basename($f);
-    $pos = strrpos($name, '.');
+	$pos = strrpos($name, '_color.');//ole
+    $pos = (0 == $pos) ? strrpos($name, '.') : $pos;
     //$ext = substr($name, $pos+1);
     $ext = 'picture';
     $id = substr($name, 0, $pos);
 
-
     if (isset($mfiles[$id])) {
         $n = '<a href="javascript:imPreview(\''.$gdir.$name.'\');void(0);">'.$mfiles[$id].'</a> ['.$id.']';
-        unset($mfiles[$id]);
-        $buttons = '
+		//ole: add to existing non color file
+		if (strrpos($mfiles[$id], "_color.") == 0) {
+			$buttons = '
+<a href="javascript:imUploadColor4(\''.$id.'\',\''.$mfiles[$id].'\');void(0);"><img src="../assets/modules/easy2/icons/picture_add.png" width="16" height="16" alt="'.'Add color pic'.'" title="'.'Add color pic'.'" border=0></a>';
+		} else $buttons = '';
+        $buttons .= '
   <a href="'.$index.'&page=comments&file_id='.$id.'&pid='.$parent_id.'"><img src="../assets/modules/easy2/icons/comments.png" width="16" height="16" alt="'.$lng['comments'].'" title="'.$lng['comments'].'" border=0></a>
   <a href="'.$index.'&page=edit_file&file_id='.$id.'&pid='.$parent_id.'"><img src="../assets/modules/easy2/icons/picture_edit.png" width="16" height="16" alt="'.$lng['edit'].'" title="'.$lng['edit'].'" border=0></a>';
+		unset($mfiles[$id]);
     } else {
         $n = '<a href="javascript:imPreview(\''.$gdir.$name.'\');void(0);" style="color:gray"><b>'.$name.'</b></a>';
         $id = null;
@@ -954,7 +1001,8 @@ function addField () {
  var im = document.getElementById("imFields");
  var di = document.createElement("DIV");
  var fi = document.getElementById("firstElt");
- di.innerHTML = \'<a href="#" onclick="this.parentNode.parentNode.removeChild(this.parentNode);" style="color:red;text-decoration:none;"><b style="letter-spacing:4px"> &times; '.$lng['remove_field_btn'].'</b></a>\'+fi.innerHTML;
+//ole +color option
+ di.innerHTML = \'[<input name="imcolor[]" value="1" type="checkbox" style="border:0;padding:0"></input>+Color file] [<a href="#" onclick="this.parentNode.parentNode.removeChild(this.parentNode);" style="color:red;text-decoration:none;"><b style="letter-spacing:4px"> &times; '.$lng['remove_field_btn'].'</b></a>]\'+fi.innerHTML;
  im.appendChild(di);
  return true;
 }
@@ -1020,7 +1068,23 @@ function imPreview (imPath) {
  var pElt = this.document.getElementById("pElt");
  pElt.innerHTML = "<img src=\'../assets/modules/easy2/preview.easy2gallery.php?path="+imPath+"\'>";
 }
-
+//ole: upload color
+function imUploadColor4 (id, fname) {
+upload_tab.show();
+var imDskr = document.getElementById("imDskr");
+imDskr.innerHTML = "color for id=" + id;
+//setup color flag
+var v = document.getElementById("add_field_btn");
+v.style.display = "none";//"block";
+v.parentNode.innerHTML += \'[<input name="imcolor[]" value="\'+id+\'" checked="true" type="checkbox" style="border:0;padding:0"></input>Color file]\';
+//hide zip
+v = document.getElementById("zip");
+v.style.display = "none";//"block";
+//setup color name
+v = document.getElementById("imName");
+v.value = fname.replace(/([.][^.]*)$/, "_color$1");;
+//onclick="javascript:document.getElementById("add_field_btn").style.display = "block";void(0);
+}
 </script>
 </head>
 <body>
@@ -1045,7 +1109,7 @@ function imPreview (imPath) {
   <div class="tab-page" id="addForm">
    <h2 class="tab">'.$lng['upload'].'</h2>
 <script type="text/javascript">
- tpResources.addTabPage(document.getElementById("addForm"));
+upload_tab=tpResources.addTabPage(document.getElementById("addForm"));
 </script>
   <p>'.$lng['upload_dir'].': <b>'.$gdir.'</b></p>
   <form name="images" action="'.$index.'&act=upload&pid='.$parent_id.'" method="post" enctype="multipart/form-data">
@@ -1059,22 +1123,22 @@ function imPreview (imPath) {
      </tr>
      <tr>
       <td><b>'.$lng['name'].':</b></td>
-      <td><input name="name[]" type="text"></td>
+      <td><input id="imName" name="name[]" type="text"></td>
      </tr>
      <tr>
-      <td colspan="2"><b>'.$lng['description'].':</b><br /><textarea name="description[]" rows=3></textarea></td>
+      <td colspan="2"><b>'.$lng['description'].':</b><br /><textarea id="imDskr" name="description[]" rows=3></textarea></td>
      </tr>
     </table>
    </div>
   </div>
   <input type="submit" value="'.$lng['upload_btn'].'" name="upload_btn">
-  <input type="button" value="'.$lng['add_field_btn'].'" onclick="javascript:addField(); void(0);">
+  <input id="add_field_btn" type="button" value="'.$lng['add_field_btn'].'" onclick="javascript:addField();void(0);">
   </form>
-  <br>
+  <br><div id="zip">
   <form name="zipfile" action="'.$index.'&act=uploadzip&pid='.$parent_id.'" method="post" enctype="multipart/form-data">
   <table cellspacing="0" cellpadding="2">
   <tr><td><b>'.$lng['archive'].': </b></td><td><input name="zip" type="file"></td><td><input type="submit" value="'.$lng['upload_btn'].'"></td></tr>
-  </table>
+  </table></div>
   </form>
   </div>
 

@@ -9,9 +9,13 @@
 
 error_reporting(0);
 
-if (empty($_GET['id']) || !is_numeric($_GET['id'])) {
+if (empty($_GET['id'])) {
     sh_err ('Error :-(');
 }
+$c='_color';
+if(0 < strrpos($_GET['id'], $c)) {
+$id = (int) str_replace($c, "", $_GET["id"]);
+} else { $id = (int) $_GET['id']; $c = ""; }
 
 // MODx config
 require_once '../../../manager/includes/config.inc.php';
@@ -21,7 +25,6 @@ mysql_select_db(str_replace('`', '', $dbase));
 @mysql_query("{$database_connection_method} {$database_connection_charset}"); 
 
 require_once './config.easy2gallery.php';
-$id = (int) $_GET['id'];
 $res = mysql_query('SELECT * FROM '.$table_prefix.'easy2_files WHERE id='.$id);
 if (!$res) sh_err('MySQL query error');
 
@@ -37,7 +40,7 @@ while ($l = mysql_fetch_row($res)) {
     $path .= $l[0].'/';
 }
 
-$fp = '../../../'.$e2g['dir'].$path.$row['id'].$ext;
+$fp = '../../../'.$e2g['dir'].$path.$row['id'].$c.$ext;
 $filesize2sent=filesize($fp);
 
 if ($e2g['ewm'] != 0) {
@@ -128,10 +131,6 @@ if ($e2g['ewm'] != 0) {
     exit();
 }
 
-
-
-
-
 function sh_err ($text) {
     header("Content-type: image/png");
     $im = @imagecreate(300, 200)
@@ -143,5 +142,4 @@ function sh_err ($text) {
     imagedestroy($im);
     exit();
 }
-
 ?>
