@@ -420,9 +420,10 @@ $_e2g['content'] .= $num_rows ? ($notables ? '</div>' : '</tr></table>') : '';
 } // if (!$fid)
 
 // THUMBS FOR CURRENT DIR
+//ole: pages ok
 $res = mysql_query('SELECT * FROM '.$modx->db->config['table_prefix'].'easy2_files '
 . ($fid? 'WHERE id='.$fid.' ' : 'WHERE dir_id='.$gid.' ')
-. 'AND status = 1 '
+. 'AND status = 1 AND filename NOT LIKE "%_color.%"'
 . 'ORDER BY '. ( $orderby == 'random' ? 'RAND() ' : $orderby.' '.$order.' ')
 . 'LIMIT '.($gpn * $limit).', '.$limit);
 
@@ -463,7 +464,8 @@ while ($l = mysql_fetch_array($res, MYSQL_ASSOC)) {
 	if(0 < strrpos($l["filename"], "_color_.")) {
 		$l["id_color"] = preg_replace("/^([^.]*)[.][^|]*[|].*$/", "$1", $l["filename"]);
 		$l["filename"] = preg_replace("/^[^|]*[|]/", "", $l["filename"]);
-    } else { $l["show_color"] = "not_display"; }
+		$l["ta"] = "a";
+    } else { $l["ta"] = "span"; $l["show_color"] = "not_display";}
     $pos = strrpos($l['filename'], '.');
     $ext = substr($l['filename'], $pos);
 
@@ -516,7 +518,8 @@ $_e2g['content'] .= $num_rows ? ($notables ? '</div>' : '</tr></table>') : '';
 if ($fid) return $_e2g['content'];
 
 // PAGES LINKS
-$res = mysql_query('SELECT COUNT(*) FROM '.$modx->db->config['table_prefix'].'easy2_files WHERE dir_id='.$gid);
+//ole: pages ok
+$res = mysql_query('SELECT COUNT(*) FROM '.$modx->db->config['table_prefix'].'easy2_files WHERE dir_id='.$gid.' AND filename NOT LIKE "%_color.%"');
 list($cnt) = mysql_fetch_row($res);
 if ($cnt > $limit) {
     $_e2g['pages'] = '<div class="e2gpnums">';

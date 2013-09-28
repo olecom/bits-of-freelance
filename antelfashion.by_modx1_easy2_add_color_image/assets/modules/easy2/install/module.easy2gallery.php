@@ -455,10 +455,43 @@ case 'delete_dir':
     header ('Location: '.html_entity_decode($_SERVER['HTTP_REFERER'], ENT_NOQUOTES));
     exit();
 
+// Delete color file
+case 'delete_cfile':
+
+    if (empty($_GET['cfile_id']) && empty($_GET['file_id']) && empty($_GET['cfile_path'])) {
+        $_SESSION['easy2err'][] = $lng['fpath_err'];
+        break;
+    }
+
+    if (is_numeric($_GET['file_id'])) {//ole:color clear link
+	    $id = (int) $_GET['file_id'];
+		$filename = mysql_fetch_row(mysql_query('SELECT filename FROM '.$modx->db->config['table_prefix'].'easy2_files WHERE id='.$id));
+		$db_res = mysql_query('UPDATE '.$modx->db->config['table_prefix'].'easy2_files set filename=\''.preg_replace('/^([^|]+)[|]/','', $filename[0]).'\', date_added=NOW() where id='.$id);
+    }
+	//ole: del color file
+    if (!empty($_GET['cfile_path'])) {
+        $cfile_path = str_replace('../', '', $_GET['cfile_path']);
+        $f_res = @unlink('../'.$cfile_path);
+		$id = (int) $_GET['cfile_id'];
+        $db_res |= mysql_query('DELETE FROM '.$modx->db->config['table_prefix'].'easy2_files WHERE id='.$id);
+        mysql_query('DELETE FROM '.$modx->db->config['table_prefix'].'easy2_comments WHERE file_id='.$id);
+    }
+
+    if ($db_res && $f_res) {
+        $_SESSION['easy2suc'][] = $lng['file_delete'];
+    } elseif ($db_res) {
+        $_SESSION['easy2suc'][] = $lng['file_delete_fdb'];
+    } elseif ($f_res) {
+        $_SESSION['easy2suc'][] = $lng['file_delete_fhdd'];
+    } else {
+        $_SESSION['easy2err'][] = $lng['file_delete_err'];
+    }
+
+    header ('Location: '.html_entity_decode($_SERVER['HTTP_REFERER'], ENT_NOQUOTES));
+    exit();
 
 
 // Delete file
-
 case 'delete_file':
 
     if (empty($_GET['file_id']) && empty($_GET['file_path'])) {
@@ -787,16 +820,16 @@ if (empty($cpath)) {
     }
 
     // MySQL File list
-    $res = mysql_query('SELECT id,filename FROM '.$modx->db->config['table_prefix'].'easy2_files WHERE dir_id='.$parent_id);
+    $res = mysql_query('SELECT id,filename,name FROM '.$modx->db->config['table_prefix'].'easy2_files WHERE dir_id='.$parent_id.' ORDER BY name ASC');
     $mfiles = array();
     if ($res) {
         while ($l = mysql_fetch_array($res, MYSQL_ASSOC)) {
-            $mfiles[$l['id']] = $l['filename'];//ole??: fname ok
+            $mfiles[$l['id']][0] = $l['filename'];
+			$mfiles[$l['id']][1] = $l['name']; //ole??: fname ok
         }
     } else {
         $_SESSION['easy2err'][] = 'MySQL ERROR: '.mysql_error();
     }
-
 }
 
 // Dir list
@@ -878,30 +911,48 @@ if (isset($mdirs) && count($mdirs) > 0) {
 }
 
 // File list
-$files = glob('../'.$gdir.'*.*');
-if ($files!=false) 
-foreach ($files as $f) {
 
-    $size = round(filesize($f)/1024);
-    $time = filemtime($f);
+//$files = glob('../'.$gdir.'*.*');
 
-    $name = basename($f);
-	$pos = strrpos($name, '_color_.');//ole
-    $pos = (0 == $pos) ? strrpos($name, '.') : $pos;
-    //$ext = substr($name, $pos+1);
+//print_r($v[0]);
+
+//if ($files!=false) 
+//foreach ($files as $f) {
+
+foreach ($mfiles as $id => $v) {
+
+    //$size = round(filesize($f)/1024);
+    //$time = filemtime($f);
+
+    //$name = basename($f);
+	//$name = $v[0];
+	//$pos = strrpos($name, '_color_.');//ole
+	print_r("| i=".$i."v=".$v[0]."\n");
+    $pos = strrpos($v[0], '.');
+    $ext = substr($v[0], $pos+1);
+	$name = $id.".".$ext;
+	$name = file_exists('../'.$gdir.$name) ? $name : $id."_color_.".$ext;
+    $size = round(filesize('../'.$gdir.$name)/1024);
+    $time = filemtime('../'.$gdir.$name);
+	
     $ext = 'picture';
-    $id = substr($name, 0, $pos);
+    //$id = substr($name, 0, $pos);
 
-    if (isset($mfiles[$id])) {
-		if(strrpos($mfiles[$id], '|') > 0) {
-			$n = '<a href="javascript:imPreview(\''.$gdir.$name.'\');void(0);">'.preg_replace('/^[^|]*[|]/', '', $mfiles[$id]).'</a> ['.$id.'](c'.preg_replace('/^(\d+)_[^|]*[|].*/', '$1', $mfiles[$id]).')';
+//die("|".$mfiles[$id][0]."|");
+
+    if (isset($mfiles[$id][0])) {
+		if(strrpos($mfiles[$id][0], '|') > 0) {
+		//	76_color_.jpg|tumblr_kv34reQP1F1qasmex.jpg
+			$cid = preg_replace('/^(\d+)_[^|]*[|].*/', '$1', $mfiles[$id][0]);
+			$cfn = preg_replace('/^([^|]+)[|].*/', '$1', $mfiles[$id][0]);
+			$n = '<a href="javascript:imPreview(\''.$gdir.$name.'\');void(0);"><acronym title="'.preg_replace('/^[^|]*[|]/', '', $mfiles[$id][0]).'">'.(strlen($mfiles[$id][1]) != 0 ? $mfiles[$id][1]: "-Empty name-").'</acronym></a> ['.$id.']<a  href="javascript:imPreview(\''.$gdir.$cfn.'\');void(0);">(color:'.$cid.'</a>!<a href="'.$index.'&act=delete_cfile&cfile_path='.$gdir.$cfn.'&cfile_id='.$cid.'&file_id='.$id.'" onclick="return confirmDelete();"><img src="../assets/modules/easy2/icons/delete.png" border="0" alt="Color '.$lng['delete'].'" title="Color '.$lng['delete'].'" /></a>)';
 		} else {
-			$n = '<a href="javascript:imPreview(\''.$gdir.$name.'\');void(0);">'.$mfiles[$id].'</a> ['.$id.']';
+			$n = '<a href="javascript:imPreview(\''.$gdir.$name.'\');void(0);"><acronym title="'.$mfiles[$id][0].'">'.(strlen($mfiles[$id][1]) != 0 ? $mfiles[$id][1]: "-Empty name-").'</acronym></a> ['.$id.']';
 		}
 		//ole: admin propose 2 add 2 existing non colored file
-		if (strrpos($mfiles[$id], "_color.") == 0) {
+		if (strrpos($mfiles[$id][0], "_color.") == 0) {
 			$buttons = '
-<a href="javascript:imUploadColor4(\''.$id.'\',\''.$mfiles[$id].'\');void(0);"><img src="../assets/modules/easy2/icons/picture_add.png" width="16" height="16" alt="'.'Add color pic'.'" title="'.'Add color pic'.'" border=0></a>';
+<a href="javascript:imUploadColor4(\''.$id.'\',\''.$mfiles[$id][0].'\');void(0);"><img src="../assets/modules/easy2/icons/picture_add.png" width="16" height="16" alt="'.'Add color pic'.'" title="'.'Add/Update color pic'.'" border=0></a>';
 		} else $buttons = '';
         $buttons .= '
   <a href="'.$index.'&page=comments&file_id='.$id.'&pid='.$parent_id.'"><img src="../assets/modules/easy2/icons/comments.png" width="16" height="16" alt="'.$lng['comments'].'" title="'.$lng['comments'].'" border=0></a>
@@ -929,8 +980,84 @@ foreach ($files as $f) {
     $i++;
 }
 
+
+/*$files = glob('../'.$gdir.'*.*');
+
+//print_r($mfiles);
+
+if ($files!=false) 
+foreach ($files as $f) {
+
+    $size = round(filesize($f)/1024);
+    $time = filemtime($f);
+
+    $name = basename($f);
+	$pos = strrpos($name, '_color_.');//ole
+    $pos = (0 == $pos) ? strrpos($name, '.') : $pos;
+    //$ext = substr($name, $pos+1);
+    $ext = 'picture';
+    $id = substr($name, 0, $pos);
+
+//die("|".$mfiles[$id][0]."|");
+
+    if (isset($mfiles[$id][0])) {
+		if(strrpos($mfiles[$id][0], '|') > 0) { */
+//			$n = '<a href="javascript:imPreview(\''.$gdir.$name.'\');void(0);"><acronym title="'.preg_replace('/^[^|]*[|]/', '', $mfiles[$id][0]).'">'.(strlen($mfiles[$id][1]) != 0 ? $mfiles[$id][1]: "-Empty name-").'</acronym></a> ['.$id.'](c'.preg_replace('/^(\d+)_[^|]*[|].*/', '$1', $mfiles[$id][0]).')';
+/*		} else {
+			$n = '<a href="javascript:imPreview(\''.$gdir.$name.'\');void(0);"><acronym title="'.$mfiles[$id][0].'">'.(strlen($mfiles[$id][1]) != 0 ? $mfiles[$id][1]: "-Empty name-").'</acronym></a> ['.$id.']';
+		}
+		//ole: admin propose 2 add 2 existing non colored file
+		if (strrpos($mfiles[$id][0], "_color.") == 0) {
+			$buttons = '
+<a href="javascript:imUploadColor4(\''.$id.'\',\''.$mfiles[$id][0].'\');void(0);"><img src="../assets/modules/easy2/icons/picture_add.png" width="16" height="16" alt="'.'Add color pic'.'" title="'.'Add color pic'.'" border=0></a>';
+		} else $buttons = '';
+        $buttons .= '
+  <a href="'.$index.'&page=comments&file_id='.$id.'&pid='.$parent_id.'"><img src="../assets/modules/easy2/icons/comments.png" width="16" height="16" alt="'.$lng['comments'].'" title="'.$lng['comments'].'" border=0></a>
+  <a href="'.$index.'&page=edit_file&file_id='.$id.'&pid='.$parent_id.'"><img src="../assets/modules/easy2/icons/picture_edit.png" width="16" height="16" alt="'.$lng['edit'].'" title="'.$lng['edit'].'" border=0></a>';
+		unset($mfiles[$id]);
+    } else {
+        $n = '<a href="javascript:imPreview(\''.$gdir.$name.'\');void(0);" style="color:gray"><b>'.$name.'</b></a>';
+        $id = null;
+        $ext .= '_error';
+        if (empty($cpath)) {
+            $buttons = '<a href="'.$index.'&act=add_file&file_path='.$gdir.$name.'&pid='.$parent_id.'"><img src="../assets/modules/easy2/icons/picture_add.png" width="16" height="16" alt="'.$lng['add_to_db'].'" title="'.$lng['add_to_db'].'" border=0></a>';
+        }
+    }
+
+    $content .= '
+ <tr'.$cl[$i%2].'>
+  <td><input name="im['.(empty($id)?'f'.$i:$id).']" value="'.$gdir.$name.'" type="checkbox" style="border:0;padding:0"></td>
+  <td><img src="../assets/modules/easy2/icons/'.$ext.'.png" width="16" height="16"></td>
+  <td>'.$n.'</td>
+  <td>'.@date($e2g['mdate_format'], $time).'</td>
+  <td>'.$size.'Kb</td>
+  <td align="right" nowrap>'.$buttons.'
+  <a href="'.$index.'&act=delete_file&file_path='.$gdir.$name.(empty($id)?'':'&file_id='.$id).'" onclick="return confirmDelete();"><img src="../assets/modules/easy2/icons/delete.png" border="0" alt="'.$lng['delete'].'" title="'.$lng['delete'].'" /></a></td>
+ </tr>';
+    $i++;
+}*/
+
 // Deleted files
+
 if (isset($mfiles) && count($mfiles) > 0) {
+    foreach ($mfiles as $k => $v) {
+        $p = strrpos($v[0], '.');
+        $content .= '
+ <tr'.$cl[$i%2].'>
+  <td><input name="im['.$k.']" value="" type="checkbox" style="border:0;padding:0"></td>
+  <td><img src="../assets/modules/easy2/icons/picture_delete.png" width="16" height="16" border="0"></td>
+  <td><b style="color:red;"><u>'.$v[0].'</u></b> ['.$k.']</td>
+  <td>---</td>
+  <td>---</td>
+  <td align="right" nowrap>
+  <a href="'.$index.'&page=comments&file_id='.$k.'&pid='.$parent_id.'"><img src="../assets/modules/easy2/icons/comments.png" width="16" height="16" alt="'.$lng['comments'].'" title="'.$lng['comments'].'" border=0></a>
+  <a href="'.$index.'&act=delete_file&file_id='.$k.'" onclick="return confirmDeleteFolder();"><img src="../assets/modules/easy2/icons/delete.png" border="0" alt="'.$lng['delete'].'" title="'.$lng['delete'].'" /></a></td>
+ </tr>';
+        $i++;
+    }
+}
+
+/*if (isset($mfiles) && count($mfiles) > 0) {
     foreach ($mfiles as $k => $v) {
         $p = strrpos($v, '.');
         $content .= '
@@ -946,7 +1073,8 @@ if (isset($mfiles) && count($mfiles) > 0) {
  </tr>';
         $i++;
     }
-}
+}*/
+
 $content .= '</table>
 <input type="submit" value="'.$lng['delete'].'" name="delete" style="font-weight:bold;color:red" />
 
