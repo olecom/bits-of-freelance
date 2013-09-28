@@ -12,7 +12,7 @@ error_reporting(0);
 if (empty($_GET['id'])) {
     sh_err ('Error :-(');
 }
-$c='_color';
+$c='_color_';
 if(0 < strrpos($_GET['id'], $c)) {
 $id = (int) str_replace($c, "", $_GET["id"]);
 } else { $id = (int) $_GET['id']; $c = ""; }

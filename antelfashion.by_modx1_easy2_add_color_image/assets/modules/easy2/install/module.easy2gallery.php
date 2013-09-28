@@ -147,7 +147,6 @@ case 'uploadzip':
     exit();
 
 case 'upload':
-
     $j = 0;
 	$pifname="";
     for ($i = 0; $i < count($_FILES['img']['tmp_name']); $i++) {
@@ -161,59 +160,61 @@ case 'upload':
             continue;
         }
 
-		if ($i > 0)  {//sequence + color
+		if ($i > 0)  {//ole: sequence + color
 			if(is_numeric($_POST['imcolor'][$i-1])) {
-				$pos = strrpos($pifname, '.');
-				$ext = "_color" . substr($pifname, $pos); //mark file as color version of prev. one
+				/*ole TODO+zip $pos = strrpos($pifname, '.');
+				$ext = "_color_" . substr($pifname, $pos); //mark file as color version of prev. one
 				$ext = substr($pifname, $pos);
 				$ifname = substr($pifname, 0, $pos) . $ext;
 //print_r($ifname);
-//die("|".$_POST['imcolor']."|");
+//die("|".$_POST['imcolor']."|");*/
 			} else {
 				$ifname = $_FILES['img']['name'][$i];
 				$pos = strrpos($ifname, '.');
 				$ext = substr($ifname, $pos);
 			}
 		} else {//single file + color
-
 			if(is_numeric($_POST['imcolor'][0])) {//singe file color
-//print_r($ifname);
 				$ifname = $_POST['name'][0];
 			} else {
 				$ifname = $_FILES['img']['name'][$i];
 			}
-//die("|".$ifname."|");
 			$pos = strrpos($ifname, '.');
 			$ext = substr($ifname, $pos);
 			if(is_numeric($_POST['imcolor'][0])) {
-				$ext = "_color".$ext;
+				$ext = "_color_".$ext;
 			}
 		}
 		
 		$pifname=$_FILES['img']['name'][$i];
 
-        if (!mysql_query('INSERT INTO '.$modx->db->config['table_prefix'].'easy2_files(dir_id,filename,size,name,description,date_added) VALUES('.$parent_id.', \''.mysql_real_escape_string($ifname).'\', '.(int)$_FILES['img']['size'][$i].', \''.mysql_real_escape_string(htmlspecialchars($_POST['name'][$i])).'\', \''.mysql_real_escape_string(htmlspecialchars($_POST['description'][$i])).'\', NOW())')) {
+		$filename = mysql_fetch_row(mysql_query('SELECT filename FROM '.$modx->db->config['table_prefix'].'easy2_files WHERE id='.$_POST['imcolor'][0]));
+		$id = preg_replace('/^(\d+)_[^|]*[|].*/', '$1', $filename[0]);
+
+		if (is_numeric($id)) {
+			if (!mysql_query('UPDATE '.$modx->db->config['table_prefix'].'easy2_files set filename=\''.mysql_real_escape_string($ifname).'\', date_added=NOW() where id='.$id)) {
             $_SESSION['easy2err'][] = $lng['db_err'].': ' . mysql_error();
             continue;
-        }
-		
-        $id = mysql_insert_id();
+			}
+		} else if (!mysql_query('INSERT INTO '.$modx->db->config['table_prefix'].'easy2_files(dir_id,filename,size,name,description,date_added) VALUES('.$parent_id.', \''.mysql_real_escape_string($ifname).'\', '.(int)$_FILES['img']['size'][$i].', \''.mysql_real_escape_string(htmlspecialchars($_POST['name'][$i])).'\', \''.mysql_real_escape_string(htmlspecialchars($_POST['description'][$i])).'\', NOW())')) {
+            $_SESSION['easy2err'][] = $lng['db_err'].': ' . mysql_error();
+            continue;
+        } else {
+			$id = mysql_insert_id();
 
-	if (0 == $i && is_numeric($_POST['imcolor'][0])){ // add color
-	
-		$name = mysql_query('SELECT name FROM '.$modx->db->config['table_prefix'].'easy2_files WHERE id='.$_POST['imcolor'][0]);
-		//$oldcolor=(int)preg_replace('/^([^|])|.*$/', '\\1', $name)
-		
-		if(!mysql_query('UPDATE '.$modx->db->config['table_prefix'].'easy2_files SET name = \''.$id.$ext.'|'.preg_replace('/^[^|]*|/', '', $name).'\' WHERE id='.$_POST['imcolor'][0])) {
+	if (0 == $i && is_numeric($_POST['imcolor'][0])){ //ole: add color link
+		//ole: link color to id
+		if(!mysql_query('UPDATE '.$modx->db->config['table_prefix'].'easy2_files SET filename = \''.$id.$ext.'|'.preg_replace('/^[^|]*[|]/', '', $filename[0]).'\' WHERE id='.$_POST['imcolor'][0])) {
 			$_SESSION['easy2err'][] = $lng['db_err'].': '. mysql_error();
             continue;
 		}
 	}
-
+		}
         $inf = getimagesize($_FILES['img']['tmp_name'][$i]);
         if (($e2g['maxw'] > 0 || $e2g['maxh'] > 0) && ($inf[0] > $e2g['maxw'] || $inf[1] > $e2g['maxh'])) {
             resize_img ($_FILES['img']['tmp_name'][$i], $inf, $e2g['maxw'], $e2g['maxh'], $e2g['maxthq']);
         }
+		@unlink('../'.$gdir.$id.$ext);
         move_uploaded_file($_FILES['img']['tmp_name'][$i], '../'.$gdir.$id.$ext);
 
         @chmod('../'.$gdir.$id.$ext, 0644);
@@ -224,8 +225,6 @@ case 'upload':
 
     header ("Location: ".$index.'&pid='.$_GET['pid']);
     exit();
-
-
 
 // Create Dirrectory
 
@@ -467,16 +466,25 @@ case 'delete_file':
         break;
     }
 
-    $id = (int) $_GET['file_id'];
-
     if (is_numeric($_GET['file_id'])) {
-        $db_res = mysql_query('DELETE FROM '.$modx->db->config['table_prefix'].'easy2_files WHERE id='.$id);
+	    $id = (int) $_GET['file_id'];
+//ole:color del
+		$filename = mysql_fetch_row(mysql_query('SELECT filename FROM '.$modx->db->config['table_prefix'].'easy2_files WHERE id='.$id));
+		if (0 < strrpos($filename[0], '_color_')) {
+			$db_res = mysql_query('DELETE FROM '.$modx->db->config['table_prefix'].'easy2_files WHERE id='.preg_replace('/^(\d+)_[^|]*[|].*/', '$1', $filename[0]));
+			$filename = preg_replace('/^([^|]*)[|].*/', '$1', $filename[0]);
+		} else $filename = "";
+        $db_res |= mysql_query('DELETE FROM '.$modx->db->config['table_prefix'].'easy2_files WHERE id='.$id);
         mysql_query('DELETE FROM '.$modx->db->config['table_prefix'].'easy2_comments WHERE file_id='.$id);
     }
 
     if (!empty($_GET['file_path'])) {
         $file_path = str_replace('../', '', $_GET['file_path']);
         $f_res = @unlink('../'.$file_path);
+		if ("" != $filename) {//ole:color del depended color file
+			$filename = '../'.preg_replace('|[/][^/]*$|', "/".$filename, $file_path);
+			$f_res |= @unlink($filename);
+		}
     }
 
     if ($db_res && $f_res) {
@@ -489,10 +497,8 @@ case 'delete_file':
         $_SESSION['easy2err'][] = $lng['file_delete_err'];
     }
 
-
     header ('Location: '.html_entity_decode($_SERVER['HTTP_REFERER'], ENT_NOQUOTES));
     exit();
-
 
 // Delete comments
 case 'delete_comments':
@@ -635,13 +641,6 @@ $page = empty($_GET['page']) ? '' : $_GET['page'];
 $content = '';
 switch ($page) {
 
-//ole: add color to existing
-case 'add_color':
-
-
-    break;
-// EDIT FILE
-
 case 'edit_file':
 
     if (empty($_GET['file_id']) || !is_numeric($_GET['file_id'])) {
@@ -649,7 +648,6 @@ case 'edit_file':
         header ("Location: ".html_entity_decode($_SERVER['HTTP_REFERER'], ENT_NOQUOTES));
         exit();
     }
-//ole: name
     if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         if(mysql_query('UPDATE '.$modx->db->config['table_prefix'].'easy2_files SET name = \''.htmlspecialchars($_POST['name'], ENT_QUOTES).'\', description = \''.htmlspecialchars($_POST['description'], ENT_QUOTES).'\', last_modified=NOW() WHERE id='.(int)$_GET['file_id'])) {
             $_SESSION['easy2suc'][] = $lng['updated'];
@@ -667,10 +665,12 @@ case 'edit_file':
     //$row['description'] = htmlspecialchars($row['description']);
     //$row['name'] = htmlspecialchars($row['name']);
 
-    $name = $row['id'].substr($row['filename'], strrpos($row['filename'], '.'));
+//ole: filename use
+	$fname = preg_replace('/^[^|]*[|]/', '', $row['filename']);
+    $name = $row['id'].substr($fname, strrpos($fname, '.'));
 
     $content .= '
-<p>'.$lng['editing'].' '.$lng['file2'].' <b><a href="javascript:imPreview(\''.$gdir.$name.'\');void(0);">'.$row['filename'].'</a></b> ('.$row['comments'].')
+<p>'.$lng['editing'].' '.$lng['file2'].' <b><a href="javascript:imPreview(\''.$gdir.$name.'\');void(0);">'.$fname.'</a></b> ('.$row['comments'].')
 &nbsp; &nbsp; &nbsp;
 <a href="'.$index.'&pid='.$parent_id.'">'.$lng['back_to_fmanager'].'</a>
 </p>
@@ -714,11 +714,12 @@ case 'comments':
 
     $res = mysql_query('SELECT * FROM '.$modx->db->config['table_prefix'].'easy2_files WHERE id='.(int)$_GET['file_id']);
     $row = mysql_fetch_array($res, MYSQL_ASSOC);
-
-    $name = $row['id'].substr($row['filename'], strrpos($row['filename'], '.'));
+//ole: filename use
+	$fname = preg_replace('/^[^|]*[|]/', '', $row['filename']);
+    $name = $row['id'].substr($fname, strrpos($fname, '.'));
 
     $content .= '
-<p>'.$lng['comments'].' '.$lng['file2'].' <b><a href="javascript:imPreview(\''.$gdir.$name.'\');void(0);">'.$row['filename'].'</a></b> ('.$row['comments'].')
+<p>'.$lng['comments'].' '.$lng['file2'].' <b><a href="javascript:imPreview(\''.$gdir.$name.'\');void(0);">'.$fname.'</a></b> ('.$row['comments'].')
 &nbsp; &nbsp; &nbsp;
 <img src="../assets/modules/easy2/icons/arrow_refresh.png" width="16" height="16" border="0" align="absmiddle">
 <a href="'.$index.'&page=comments&file_id='.$_GET['file_id'].'&pid='.$parent_id.'">'.$lng['refresh'].'</a>
@@ -790,14 +791,13 @@ if (empty($cpath)) {
     $mfiles = array();
     if ($res) {
         while ($l = mysql_fetch_array($res, MYSQL_ASSOC)) {
-            $mfiles[$l['id']] = $l['filename'];
+            $mfiles[$l['id']] = $l['filename'];//ole??: fname ok
         }
     } else {
         $_SESSION['easy2err'][] = 'MySQL ERROR: '.mysql_error();
     }
 
 }
-
 
 // Dir list
 $dirs = glob('../'.$gdir.'*', GLOB_ONLYDIR);
@@ -877,7 +877,6 @@ if (isset($mdirs) && count($mdirs) > 0) {
     }
 }
 
-
 // File list
 $files = glob('../'.$gdir.'*.*');
 if ($files!=false) 
@@ -887,15 +886,19 @@ foreach ($files as $f) {
     $time = filemtime($f);
 
     $name = basename($f);
-	$pos = strrpos($name, '_color.');//ole
+	$pos = strrpos($name, '_color_.');//ole
     $pos = (0 == $pos) ? strrpos($name, '.') : $pos;
     //$ext = substr($name, $pos+1);
     $ext = 'picture';
     $id = substr($name, 0, $pos);
 
     if (isset($mfiles[$id])) {
-        $n = '<a href="javascript:imPreview(\''.$gdir.$name.'\');void(0);">'.$mfiles[$id].'</a> ['.$id.']';
-		//ole: add to existing non color file
+		if(strrpos($mfiles[$id], '|') > 0) {
+			$n = '<a href="javascript:imPreview(\''.$gdir.$name.'\');void(0);">'.preg_replace('/^[^|]*[|]/', '', $mfiles[$id]).'</a> ['.$id.'](c'.preg_replace('/^(\d+)_[^|]*[|].*/', '$1', $mfiles[$id]).')';
+		} else {
+			$n = '<a href="javascript:imPreview(\''.$gdir.$name.'\');void(0);">'.$mfiles[$id].'</a> ['.$id.']';
+		}
+		//ole: admin propose 2 add 2 existing non colored file
 		if (strrpos($mfiles[$id], "_color.") == 0) {
 			$buttons = '
 <a href="javascript:imUploadColor4(\''.$id.'\',\''.$mfiles[$id].'\');void(0);"><img src="../assets/modules/easy2/icons/picture_add.png" width="16" height="16" alt="'.'Add color pic'.'" title="'.'Add color pic'.'" border=0></a>';
@@ -1001,8 +1004,9 @@ function addField () {
  var im = document.getElementById("imFields");
  var di = document.createElement("DIV");
  var fi = document.getElementById("firstElt");
-//ole +color option
- di.innerHTML = \'[<input name="imcolor[]" value="1" type="checkbox" style="border:0;padding:0"></input>+Color file] [<a href="#" onclick="this.parentNode.parentNode.removeChild(this.parentNode);" style="color:red;text-decoration:none;"><b style="letter-spacing:4px"> &times; '.$lng['remove_field_btn'].'</b></a>]\'+fi.innerHTML;
+//ole TODO +color option
+//[<input name="imcolor[]" value="1" type="checkbox" style="border:0;padding:0"></input>+Color file] 
+di.innerHTML = \'[<a href="#" onclick="this.parentNode.parentNode.removeChild(this.parentNode);" style="color:red;text-decoration:none;"><b style="letter-spacing:4px"> &times; '.$lng['remove_field_btn'].'</b></a>]\'+fi.innerHTML;
  im.appendChild(di);
  return true;
 }
@@ -1071,8 +1075,8 @@ function imPreview (imPath) {
 //ole: upload color
 function imUploadColor4 (id, fname) {
 upload_tab.show();
-var imDskr = document.getElementById("imDskr");
-imDskr.innerHTML = "color for id=" + id;
+//var imDskr = document.getElementById("imDskr");
+//imDskr.innerHTML = "color for id=" + id;
 //setup color flag
 var v = document.getElementById("add_field_btn");
 v.style.display = "none";//"block";
@@ -1082,7 +1086,7 @@ v = document.getElementById("zip");
 v.style.display = "none";//"block";
 //setup color name
 v = document.getElementById("imName");
-v.value = fname.replace(/([.][^.]*)$/, "_color$1");;
+v.value = fname.replace(/^[^|]*[|]/, "").replace(/([.][^.]*)$/, "_color$1");
 //onclick="javascript:document.getElementById("add_field_btn").style.display = "block";void(0);
 }
 </script>
@@ -1645,7 +1649,7 @@ function synchro ($path, $pid, $cfg) {
     $mfiles = array();
     if ($res) {
         while ($l = mysql_fetch_array($res, MYSQL_ASSOC)) {
-            $mfiles[$l['id']] = $l['filename'];
+            $mfiles[$l['id']] = preg_replace('/^[^|]*[|]/', '', $l['filename']);//ole??: fname replace??
         }
     } else {
         $_SESSION['easy2err'][] = 'MySQL ERROR: '.mysql_error();

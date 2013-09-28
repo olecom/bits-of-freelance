@@ -459,14 +459,13 @@ while ($l = mysql_fetch_array($res, MYSQL_ASSOC)) {
 
     if (($i>0) && ($i % $colls == 0) && !$notables) $_e2g['content'] .= '</tr><tr>';
 
+	//ole: color part
+	if(0 < strrpos($l["filename"], "_color_.")) {
+		$l["id_color"] = preg_replace("/^([^.]*)[.][^|]*[|].*$/", "$1", $l["filename"]);
+		$l["filename"] = preg_replace("/^[^|]*[|]/", "", $l["filename"]);
+    } else { $l["show_color"] = "not_display"; }
     $pos = strrpos($l['filename'], '.');
     $ext = substr($l['filename'], $pos);
-
-	//ole: color part
-	if(0 < strrpos($l["name"], "_color.")) {
-		$l["id_color"] = preg_replace("/^([^.]*)[.][^|]*[|].*$/", "$1", $l["name"]);
-		$l["name"] = preg_replace("/^[^|]*[|]/", "", $l["name"]);
-    } else { $l["show_color"] = "not_display"; }
 
     $l['title'] = $l['name'];
 
