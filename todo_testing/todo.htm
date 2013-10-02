@@ -1,0 +1,467 @@
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>TODO items</title>
+    <style>
+    body { background-color:white }
+    .intro {font-size: 21pt; }
+    .todonew { font-family: monospace; border:0; margin:0; padding:0}
+    .bglightgreen { background-color:lightgreen }
+    .bglightblue { background-color:lightblue }
+    </style>
+</head>
+<body>
+<noscript style='color: red; font-size: 24pt'>
+NOTE: Java Script was disabled. Here's nothing to look at, sorry.
+</noscript>
+<i id='hello'></i><hr/>
+<pre id="todo"></pre>
+
+<script type="text/javascript">
+var app // global variable to link page event handlers to local data
+
+(function uglify_js_closure(win ,doc ,eval ,log){
+// cfg & globals
+
+var devel = true
+   ,url = { items: !devel ? 'http://rygorh.dev.monterosa.co.uk/todo/items.php'
+                          : 'http://localhost/items.json'
+           ,types: !devel ? 'http://rygorh.dev.monterosa.co.uk/todo/types.php'
+                          : 'http://localhost/types.json'
+   }
+   ,todo = {
+       _lists: []
+       ,items: null ,types: null
+       ,_sort: '' ,onSort: null ,items_orig_order: null
+       ,_filters: {} ,no_filter: { items: null ,items_orig_order: null }
+   }
+   ,schema = {
+         task: 'string'
+        ,expires_at: 'date'
+        ,created_at: 'date'
+        ,done: 'bool'
+        ,type: { type: 'int' ,list: 'types' }
+        // custom calculated fields in schema
+        ,time_remains: schema_show_remaining_time
+    }// general schema of the JSON data from data URLs
+
+   ,schema_header = {
+    // view setup: change order of items here to have it in grid
+    // pad: static `pad` can be changed/configured
+    // sort: first field with `sort` wins, i.e. here's no multisort
+         task: { t: 'TODO task' ,pad: '' }
+        ,type: { t: 'Type' ,filter:[] ,pad: '........' }
+        ,done: { t: 'Done' ,filter:[] ,pad:'.......' }
+                                          // "2013-09-28T20:59:40-02:00".replace(/./g,'.')
+        ,created_at: { t: 'Created at' ,pad: '.........................' }
+        ,expires_at: { t: 'Expires at' ,sort: 1 /* or -1 or 0*/ ,pad: '.........................' }
+        ,time_remains: {
+            t: 'Time remains'
+            ,pad: '.............' //space for time format: '02d 18h 30:11'
+        }
+    }
+
+    // finish here, wait for load
+    return addEvent('load' ,on_load ,win)
+
+    function schema_show_remaining_time(el){// time format: '02d 18h 30:11'
+        function pad10(n){ return n < 10 ? '0' + n : n }
+        var t ,s = '' ,rsec = parseInt(el.expires_at) - parseInt(el.created_at)
+        if(rsec >= 0){
+            s += pad10(t = Math.floor(rsec / 24 / 60 / 60)) + 'd ',rsec -= t * 24 * 60 * 60
+            s += pad10(t = Math.floor(rsec / 60 / 60)) ,rsec -= t * 60 * 60
+            s += 'h ' + pad10(t = Math.floor(rsec / 60)) ,rsec -= t * 60
+            s += ':' + pad10(rsec)
+        } else s = '  error   '
+        return s
+    }
+
+    function addEvent(ev, cb, elem){
+    //IE8+ fix http://stackoverflow.com/questions/6927637/addeventlistener-in-internet-explorer
+        if (elem.addEventListener)  // W3C DOM
+            elem.addEventListener(ev, cb, true)
+        else if (elem.attachEvent){ // IE DOM
+            elem.attachEvent("on" + ev, cb)
+        }
+        else { // No match
+            elem["on" + ev] = cb
+        }
+    }
+
+    function on_load(){
+        function gi(i){ return doc.getElementById(i) }
+        function gt(n){ return doc.getElementsByTagName(n)[0] }
+        function gs(n){ return doc.getElementsByTagName(n) }
+        function cl(t){ return doc.createElement(t) }
+        function ac(e ,c){ e.appendChild(c) ; return e }
+        function pad10(n){ return n < 10 ? '0' + n : n }
+
+        // "All modern browsers (IE7+, Firefox, Chrome, Safari, and Opera)"
+        function ajax_get(url) {
+            var req = new XMLHttpRequest()
+            req.open("GET" ,url ,false) ,req.send()
+            return req
+        }
+        function json_to_var(s ,var_name){
+            try {
+                var_name = win.JSON ? win.JSON.parse(s) : eval(var_name + '=' + s)
+            } catch(e) { var_name = 'Error: ' ; for (i in e) var_name += e[i] + '\n'}
+            return var_name
+        }
+
+        // Macros
+        function get_data_of(type){// macro, refs: `todo`
+            var xhr = ajax_get(url[type])
+            todo[type] = 'todo.' + type
+            if('string' === typeof xhr.responseText){
+                todo[type] = json_to_var(xhr.responseText ,todo[type])
+            }
+        }
+        function mk_new_input(len ,id){
+            return '<input id="' + id + '" class="todonew bglightgreen" type="text" value="** Enter text here **" size="' + (len - 1) + '"/>|'
+        }
+        function mk_new_bool_combo(len ,id){
+            return '<select id="' + id + '"  onchange="javascript:void(0)" style="width:' + (len - 1)+'ex">' +
+                   '<option selected="selected" value="false">No</option>'+
+                   '<option value="true">Yes</option></select>|'
+        }
+        function mk_new_date_input(len ,id){
+            return '<input id="' + id + '" class="todonew bglightblue" type="text" size="' + (len - 1) + '"/>|'
+        }
+        function mk_new_list_combo(len ,id){
+            var i, el = schema[id].list ,s = ''
+            for(i in el) if('pad' != i){
+                    s += '<option value="' + i+ '">' + el[i] +'</option>'
+            }
+            return '<select id="' + id + '" onchange="javascript:void(0)" style="width:' +
+                    (len)+'ex">' + s + '</select>|'
+        }
+
+        function mk_new_save_button(){
+            return '<input value="Add new TODO item" onclick="javascript:app.onTodoNew();void(0)" type="button"/>'
+        }
+
+        function draw_grid(same_sort){// macro, refs: `todo` ,`schema_header` ,`schema`
+            var el ,i ,j ,s ,p ,v ,h ,d ,t ,a ,n = 1
+            // header
+            s = '<br/>|' ,h = '' ,a = 'New item:<br/>|' ,todo._sort = null
+            for(i in schema_header){
+                el = schema_header[i]
+
+                if(el.hasOwnProperty('sort') && !todo._sort){
+                    todo._sort = i// mark only one sort field
+                    do_sort(same_sort)
+                    v = '[A->Z]' + el.t// header text without HTML
+                    d = '<a id="app_sort" onclick="javascript: app.onSort();void(0)" href="#sort_'+
+                        i + '">' + sort_direction() + '</a>' + el.t
+                } else if(el.filter){
+                    v = '[F]' + el.t
+                    d = '<a onclick="javascript: app.onFilter('+"'"+i+"'"+');void(0)" href="#filter_'+
+                        i + '">[F]</a>' + el.t
+                } else {
+                    d = v = el.t ? el.t : el// simple header text
+                }
+                if((p = el.pad) || (schema[i].list && (p = schema[i].list.pad))){// make padding
+                    t = '---' + (v + p.slice(0, p.length - v.length)) // line
+                    v = d + p.slice(0, p.length - v.length)
+                } else {
+                    t = '---' + v// line element without padding
+                }
+                h += t
+                s += ' ' + v + ' |'// header text & padding
+
+                if('string' == schema[i]){
+                    a += mk_new_input(t.length ,i)
+                } else if('bool' == schema[i]){
+                    a += mk_new_bool_combo(t.length ,i)
+                } else if('date' == schema[i]){
+                    a += mk_new_date_input(t.length ,i)
+                } else if(schema[i].list){
+                    a += mk_new_list_combo(t.length ,i)
+                } else a += t.replace(/./g ,'.')
+            }
+            a += mk_new_save_button()
+            h = '+' + h.slice(0, h.length - 1).replace(/./g,'-') + '+---+'
+            // ** body **
+            s += ' #<br/>' + h + '<br/>|' ,j = 0
+            do {// show items in grid
+                el = todo.items[j]
+                for(i in schema_header){
+                    // value
+                    if('bool' == schema[i]){
+                        v = '[' + (el[i] ? 'X' : ' ') + ']'
+                        v = '<a href="#change_item_' + j +
+                            '" onClick="javascript: app.onChangeStatus(' + j +','+"'" + i + "'"+',this)">' +
+                            v + '</a>'
+                    } else if('date' == schema[i]){
+// http://en.wikipedia.org/wiki/ISO_8601: "2007-04-05T12:30-02:00"
+                        d = new Date(parseInt(el[i]) * 1000)
+                        p = d.getTimezoneOffset()// show non UTC/GMT time
+                        v = (p < 0 ? '-' : '+' )
+                            + pad10((v = Math.floor(Math.abs(p) / 60))) + ':'
+                            + pad10(p * ((p < 0 ? -1 : +1 )) - v * 60)
+                        v = d.getFullYear() + '-'
+                            + pad10(d.getMonth() + 1) + '-'
+                            + pad10(d.getDate()) + 'T<b>'
+                            + pad10(d.getHours()) + ':'
+                            + pad10(d.getMinutes()) + ':'
+                            + pad10(d.getSeconds()) + '</b>'
+                            + v
+                    } else if('function' == typeof schema[i]){
+                        v = schema[i](el)// custom calculated fields in schema
+                    } else v = el[i]
+
+                    // padding
+                    if((p = schema_header[i].pad) ||
+                       (schema[i].list && (p = schema[i].list.pad))){
+                       d = v.replace(/<[^>]*>/g ,'')// strip HTML tags
+                       if(p.length < d.length){// new data may overflow
+                            v = v.slice(0, p.length + (v.length - d.length))
+                       } else {// old static data
+                            v = v + p.slice(0, p.length - d.length)
+                       }
+                    }
+                    s += ' ' + v + ' |'
+                }
+                s += ' ' + n++
+                if(++j == todo.items.length)
+                    break
+                s += '<br/>|'
+            } while(true)
+            gi('todo').innerHTML = a + '<br/>' + h + s + '<br/>' + h
+        }// draw_grid
+
+        var el ,i ,j ,k ,s ,tmp // locals
+
+        // ====  main run  ==== //
+
+        for(i in schema){// handle dictionaties in schema
+            if((s = schema[i].list)){
+                todo._lists.push(i)// back reference for data joins
+                get_data_of(s)// load data sets (dictionaties) defined by schema
+
+                el = todo[s] ,tmp = { pad: '' }
+                for(j = 0; j < el.length; j++){
+                    s = el[j].name
+                    tmp[el[j].id] = s
+                    if(tmp.pad.length < s.length){
+                        tmp.pad = s// padding for text field (variable length)
+                    }
+                }// convert [{id, items}] array to array-like hash (for data join)
+                tmp.pad = tmp.pad.replace(/./g ,'.')// IE eats spaces
+                schema[i].list = tmp
+            }
+        }
+
+        get_data_of('items')// load items (main dataset)
+
+        // prepare static data for drawing; this view will apply to any new data
+        for(j = 0; j < todo.items.length; j++){
+            el = todo.items[j]
+            if(todo._lists.length){// join data for lists (dictionaties)
+                for(k = 0; k < todo._lists.length; k++){
+                    s = todo._lists[k]// schema item to change `id` to `name`
+                    el[s] = schema[s].list[el[s]]
+                }
+            }
+            for(i in schema){
+                if('string' == schema[i]){
+                    if(!schema_header[i].hasOwnProperty('pad'))
+                        return alert("ERROR: `schema_header` doesn't match `schema` of 'string' field: " + i)
+
+                    if(schema_header[i].pad.length < el[i].length){
+                       schema_header[i].pad = el[i]
+                    }
+                }// scan max for padding for 'string' type fields (variable length)
+            }
+        }
+        for(i in schema){
+            if('string' == schema[i]){
+                schema_header[i].pad = schema_header[i].pad.replace(/./g ,'.')// IE eats spaces
+            }// max padding for 'string' type fields (variable length)
+        }
+        todo.items_orig_order = todo.items.slice()
+        todo.onSort = draw_grid
+        todo.onFilter = change_filter
+        todo.onTodoNew = add_new_todo
+        todo.onChangeStatus = change_status_done
+
+        app = todo //link application global object with data
+        draw_grid()
+
+        update_create_time()
+        // hello world
+        el = cl('b') ,el.innerHTML = 'Interactive TODO items' ,el.className = 'intro'
+        ac(gi('hello') ,el)
+
+        return// main run ends here
+
+        // event handlers
+
+        function change_filter(id ,nodraw){
+            var el = schema_header[id] ,s = '' ,j ,k ,i
+        if(id){
+            if(!todo._filters[id]){
+                if('bool' == schema[id]){
+                    if(0 == el.filter.length)
+                        el.filter.push('Yes'), el.filter.push('No')
+                } else if('int' == schema[id] || ('int' == schema[id].type)){
+                    if(schema[id].list){
+                        for(j in schema[id].list)
+                            if('pad' != j) el.filter.push(schema[id].list[j])
+                    }
+                }
+                todo._filters[id] = true
+            }
+            s = prompt('Current values to show:' ,el.filter.join(' '))
+            if(!s){// clear filters
+                todo._filters[id] = false// disable filtering
+                el.filter.splice(0)
+            } else {
+                el.filter = s.replace(/ +/, ' ')
+                             .replace(/ +$/, '')
+                             .replace(/^ +/,'').split(' ')
+            }
+         }
+            // some filters could be added before, some can just be cleared
+            if(!todo.no_filter.items){// save non filtered
+                todo.no_filter.items = todo.items
+                todo.no_filter.items_orig_order = todo.items_orig_order
+            }
+            k = 0
+            todo.items = todo.no_filter.items.slice()
+            todo.items_orig_order = todo.no_filter.items_orig_order.slice()
+            for(i in todo._filters){// multifiltering
+                if(todo._filters[i]){
+                    k = 1
+                    if(0 == k++) do_filter_by_first(i)
+                    else         do_filter_by_others(i)
+                }
+            }
+            if(0 == k){// no filters
+                todo.items = todo.no_filter.items
+                todo.items_orig_order = todo.no_filter.items_orig_order
+                todo.no_filter.items = todo.no_filter.items_orig_order = null
+            }
+            if(!nodraw) draw_grid(true)
+            return
+
+            //TODO: when adding to filtered, reset filters
+            function do_filter_by_first(id){
+                todo.items_orig_order = []
+                el = schema_header[id]
+                for(j = 0; j < todo.no_filter.items_orig_order.length; j++){
+                    i = todo.no_filter.items_orig_order[j]
+                    for(k = 0; k < el.filter.length; k++){
+                        if('bool' == schema[id]){
+                            if((i[id] ? 'Yes' : 'No') == el.filter[k]){
+                                todo.items_orig_order.push(i)
+                            }
+                        } else if(i[id] == el.filter[k]){
+                            todo.items_orig_order.push(i)
+                        }
+                    }
+                }
+                todo.items = todo.items_orig_order.slice()// for sorting
+            }
+            function do_filter_by_others(id){
+                var items = []
+                el = schema_header[id]
+                for(j = 0; j < todo.items_orig_order.length; j++){
+                    i = todo.items_orig_order[j]
+                    for(k = 0; k < el.filter.length; k++){
+                        if('bool' == schema[id]){
+                            if((i[id] ? 'Yes' : 'No') == el.filter[k]){
+                                items.push(i)
+                            }
+                        } else if(i[id] == el.filter[k]){
+                            items.push(i)
+                        }
+                    }
+                }
+                todo.items_orig_order = items.slice()
+                todo.items = items.slice()// for sorting
+            }
+        }
+
+        function change_status_done(j ,i ,el){
+            todo.items[j][i] = todo.items[j][i] ? !true : true
+                el.innerHTML = el.innerHTML.replace(/[[]./, todo.items[j][i] ? '[X' : '[ ')
+        }
+
+        function update_create_time(){
+            var d = new Date()
+            gi('created_at').value = d.getFullYear() + '-'
+                + pad10(d.getMonth() + 1) + '-'
+                + pad10(d.getDate()) + ' '
+                + pad10(d.getHours()) + ':'
+                + pad10(d.getMinutes()) + ':'
+                + pad10(d.getSeconds())
+            setTimeout(update_create_time ,1 << 12)
+        }
+
+        function add_new_todo(){
+            var i ,el ,t ,item = {}
+
+            for(i in todo._filters){// multifiltering
+                if(todo._filters[i])
+                    todo._filters[i] = false
+            }
+            change_filter('' ,true)
+            for(i in schema){
+                if((el = gi(i))){
+                    if('bool' == schema[i]){
+                        item[i] = el.value == 'true' ? true : !true
+                    } else if('int' == schema[i] || ('int' == schema[i].type)){
+                        //item[i] = parseInt(el.value)//
+                        item[i] = el.options[el.selectedIndex].text
+                    } else if('date' == schema[i]){
+                        if(isNaN(t = new Date(el.value)))
+                            return alert('Error! Invalid Date/Time: ' + schema_header[i].t)
+                        item[i] = t.getTime()/1000
+                    } else item[i] = el.value
+                    //el.value = ''
+                }
+            }
+            todo.items.push(item) ,todo.items_orig_order.push(item)
+            draw_grid(true)
+            alert('Item was added. Filters (if any) were cleared.')
+        }
+
+        function sort_direction(){
+            if(todo._sort)
+                return 0 < schema_header[todo._sort].sort ?
+                       '[A->Z]' : 0 == schema_header[todo._sort].sort ?
+                       '[0000]' : '[Z->A]'
+        }
+        function do_sort(same_sort){
+            if(!same_sort){
+                if(gi('app_sort')){// change next click order
+                    if(-1 == schema_header[todo._sort].sort){
+                        schema_header[todo._sort].sort = 0
+                    } else if(0 == schema_header[todo._sort].sort){
+                        schema_header[todo._sort].sort = 1
+                    } else {
+                        schema_header[todo._sort].sort = -1
+                    }
+                }
+            }
+
+            if(0 == schema_header[todo._sort].sort){
+                todo.items = todo.items_orig_order.slice()
+            } else todo.items.sort(function(a ,b){
+                return a[todo._sort] > b[todo._sort] ?
+                              schema_header[todo._sort].sort :
+                       a[todo._sort] < b[todo._sort] ?
+                       (-1) * schema_header[todo._sort].sort : 0
+            })
+        }
+    }// on_load()
+})(window ,document ,eval ,(console ? function(m){
+    if(String(m).indexOf('ERR') > 0) console.error(m)
+    else console.log(m)
+} : alert))
+</script>
+</body>
+</html>
