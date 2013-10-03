@@ -9,11 +9,4 @@ Random bits done for partners (initially non for profit)
 Tests for job applicant
 =========
 
-* [October 2013] [JavaScript: todo_testing "Interactive TODO items" for (Belitsoft)](http://dela.by/ftp/todo_testing/todo.htm)
-
-    - view items and sort on one particular field
-    - show remaining time
-    - new items addition
-    - change `done` status of items
-    - filtering on two particular fields
-    + needed support for: IE8+, Chrome, FF 3.5+, Safari 5+ (where you can get those?:)
+* [October 2013] [JavaScript: todo_testing "Interactive TODO items" for (Belitsoft)](http://olecom.github.io/bits-of-freelance/#todo_Belitsoft)
