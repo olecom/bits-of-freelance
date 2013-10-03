@@ -26,9 +26,9 @@ var app // global variable to link page event handlers to local data
 
 var devel = true
    ,url = { items: !devel ? 'http://rygorh.dev.monterosa.co.uk/todo/items.php'
-                          : 'http://localhost/items.json'
+                          : 'items.json'
            ,types: !devel ? 'http://rygorh.dev.monterosa.co.uk/todo/types.php'
-                          : 'http://localhost/types.json'
+                          : 'types.json'
    }
    ,todo = {
        _lists: []
@@ -347,7 +347,6 @@ var devel = true
             if(!nodraw) draw_grid(true)
             return
 
-            //TODO: when adding to filtered, reset filters
             function do_filter_by_first(id){
                 todo.items_orig_order = []
                 el = schema_header[id]
