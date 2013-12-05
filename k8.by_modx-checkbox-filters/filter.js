@@ -8,7 +8,18 @@ $(document).ready(function() {
         submitFiltersForm();
     });
 
-    $('#filterform').on('submit', function (e) {
+    // ole: fix pagination without filter values in URL from backend
+    var path = window.location.pathname
+        ,form = $('#filterform')
+        ,fget = form.serialize()
+
+    $(".navigator_block a").each(function(){
+        var el = $(this)
+           ,href = el.attr("href")//catalog/apparel.html?orderBy=&cat_start=12
+        el.attr("href", href.replace(/.*cat_start/, path + '?' + fget + '&cat_start'))
+    })
+    //ole: use cached `form`
+    form.on('submit', function (e) {
         e.preventDefault();
         submitFiltersForm();
     })
