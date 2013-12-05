@@ -2,6 +2,14 @@ $(document).ready(function() {
 
     setSelectedFilters();
 
+    //ole: submit on every filter checkbox change (autofilter)
+    // `form id="filterform"`
+    //  `input id="disc" name="sales" value="1" class="checkbox"`
+    //
+    $('#filterform .checkbox').on('change', function (e) {
+        submitFiltersForm();
+    });
+
     $('#select').on('change', function (e) {
         $('input[name=orderBy]').val($(this).val());
 
