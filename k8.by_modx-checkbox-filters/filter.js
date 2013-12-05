@@ -97,13 +97,14 @@ function array_unique( array ) {
 }
 
 function submitFiltersForm() {
-    var uri = new Uri(decodeURIComponent(window.location.href).replace(/\+/g,' ')),
-        form = $('#filterform'),
-        orderBy = $('input[name=orderBy]').val();
+    var form = $('#filterform')
 
-    if (!orderBy) {
-        $('input[name=orderBy]').remove();
-    }
+    /*ole: fix FF and IE not clearing all checkboxes, by leaving this extra param
+    * var orderBy = $('input[name=orderBy]').val();
+    * if (!orderBy) {
+    *     $('input[name=orderBy]').remove();
+    * }
+    */
 
     form.off('submit');
     form.submit();
