@@ -1,4 +1,11 @@
-$(document).ready(function() {
+$(document).ready(on_data_ready)
+
+var ajax = "true" //ole: ajax loading
+function get_w_href(){
+    return "true" == ajax ? window.location.href : ajax
+}
+
+function on_data_ready() {
 
     setSelectedFilters();
 
@@ -44,10 +51,10 @@ $(document).ready(function() {
         submitFiltersForm();
     });
 
-});
+}
 
 function setSelectedFilters() {
-    var uri = new Uri(decodeURIComponent(window.location.href).replace(/\+/g,' ')),
+    var uri = new Uri(decodeURIComponent(get_w_href()).replace(/\+/g,' ')),
         c = {checked: "checked"},
         s = {selected: "selected"},
         arr = array_unique(getUrlVars());
@@ -72,7 +79,9 @@ function setSelectedFilters() {
 
 function getUrlVars() {
     var vars = [], hash;
-    var hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
+    var hashes = get_w_href();
+
+    hashes = hashes.slice(hashes.indexOf('?') + 1).split('&');
 
     for(var i = 0; i < hashes.length; i++) {
         hash = hashes[i].split('=');
@@ -107,5 +116,24 @@ function submitFiltersForm() {
     */
 
     form.off('submit');
-    form.submit();
+
+    if(ajax){//ole: ajax loading
+        $('.product_block').css("opacity", 0.5)
+        ajax = window.location.origin + window.location.pathname + '?' + form.serialize()
+        $.ajax({
+            url: ajax,
+            success: function(data) {
+                $('.cont').html(data
+                    .replace(/[\s\S]*<div class="cont"/m,'<div class="cont"')
+                    .replace(/<!-- end cont -->[\s\S]*/m,'')
+                    .replace('<script type="text/javascript" src="/js/jsuri.js"></script>','')
+                    .replace('<script type="text/javascript" src="/js/filter.js"></script>','')
+                )
+                on_data_ready()
+                $('.product_block').css("opacity", 1.0)
+            }
+        })
+    } else {
+        form.submit();
+    }
 }
