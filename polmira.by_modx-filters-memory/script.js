@@ -153,17 +153,19 @@ $(function() {
 function filterSetup(){
     var fltr = $('#filter')
         ,fd ,i ,l ,r = false
+        ,lps
 
     if(!fltr.length) return
 
     fltr.find('.filter-item').removeClass('checked').find('input[type="checkbox"]').attr('checked', false);
 
+    lps = window.location.pathname.substr(1,3)
     fd = decodeURIComponent(document.cookie).split(';')
     for(i = 0; i < fd.length; i++){
         l = fd[i]
-        if((1 == l.indexOf('filter[') && ('1' == l.slice(-1)))){
+        if((1 == l.indexOf('filter[') && (lps == l.slice(-3)))){
             if(!r) r = true
-            fltr.find('.filter-item input[name="'+l.substr(1, l.length-3)+'"]')
+            fltr.find('.filter-item input[name="'+l.substr(1, l.length-5)+'"]')
                 .click()
                 .attr('checked', true)
                 .parent()
@@ -182,7 +184,7 @@ function filterSetup(){
             if(old){
                 delCookie(a)
             } else {
-                document.cookie = encodeURIComponent(a) + '=1'
+                document.cookie = encodeURIComponent(a) + '=' + lps
             }
             return this.checked = !old;
         });
@@ -200,7 +202,7 @@ function filterSetup(){
         for(i = 0; i < fd.length; i++){
             l = fd[i]
             if(1 == l.indexOf('filter['))
-                delCookie(l.substr(1, l.length-3))
+                delCookie(l.substr(1, l.length-5))
         }
 
         onGetAjaxContent();
