@@ -86,31 +86,10 @@ function onGetAjaxContent() {
 //** On ready */
 $(function() {
     $('.clear').hide();
-    $('.filter-item').removeClass('checked').find('input[type="checkbox"]').attr('checked', false);
     $(".top-line").sticky({topSpacing:40});
     $("#navigation").sticky({topSpacing:30});
 
-
-    //** Toggle checking */
-    $('.filter-item').on('click', function(){
-        $(this).toggleClass('checked').find('input[type="checkbox"]').attr('checked', function(idx, old){
-            if(this.checked) this.checked = false;
-            else this.checked = true;
-            return !old;
-        });
-        $('#filter_paginator').val(0);
-        onGetAjaxContent();
-                $('#resource_counter').show();
-                $('.clear').show();
-    });
-
-    //** Clear filter */
-    $('#filter-controls .clear').on('click', function(){
-        $('.filter-item').removeClass('checked').find('input[type="checkbox"]').attr('checked', false);
-        onGetAjaxContent();
-                $('#resource_counter').hide();
-                $('.clear').hide();
-    });
+    filterSetup()
 
     //** Calculator toggling */
     $('.calculator .switch').on('click', function(){
@@ -170,3 +149,66 @@ $(function() {
     });
 
 });
+
+function filterSetup(){
+    var fltr = $('#filter')
+        ,fd ,i ,l ,r = false
+
+    if(!fltr.length) return
+
+    fltr.find('.filter-item').removeClass('checked').find('input[type="checkbox"]').attr('checked', false);
+
+    fd = decodeURIComponent(document.cookie).split(';')
+    for(i = 0; i < fd.length; i++){
+        l = fd[i]
+        if((1 == l.indexOf('filter[') && ('1' == l.slice(-1)))){
+            if(!r) r = true
+            fltr.find('.filter-item input[name="'+l.substr(1, l.length-3)+'"]')
+                .attr('checked', true)
+                .parent()
+                    .toggleClass('checked')
+        }
+    }
+    if(r){// there are some filters in memory, load content
+        onGetAjaxContent()
+        $('#resource_counter').show()
+        $('.clear').show()
+    }
+
+    fltr.find('.filter-item').on('click', function(){// on Toggle filter
+        $(this).toggleClass('checked').find('input[type="checkbox"]').attr('checked', function(idx, old){
+            var a = $(this).attr('name')
+            if(old){
+                delCookie(a)
+            } else {
+                document.cookie = encodeURIComponent(a) + '=1'
+            }
+            return this.checked = !old;
+        });
+        fltr.find('#filter_paginator').val(0);
+        onGetAjaxContent();
+                $('#resource_counter').show();
+                $('.clear').show();
+    });
+
+    $('#filter-controls .clear').on('click', function(){// on Clear filter
+        fltr.find('.filter-item').removeClass('checked').find('input[type="checkbox"]').attr('checked', false);
+
+        var fd = decodeURIComponent(document.cookie).split(';')
+            ,i ,l
+        for(i = 0; i < fd.length; i++){
+            l = fd[i]
+            if(1 == l.indexOf('filter['))
+                delCookie(l.substr(1, l.length-3))
+        }
+
+        onGetAjaxContent();
+                $('#resource_counter').hide();
+                $('.clear').hide();
+    });
+}
+
+function delCookie(name)
+{
+    document.cookie = encodeURIComponent(name) + '=; expires=Thu, 01 Jan 1970 00:00:01 GMT;'
+}
