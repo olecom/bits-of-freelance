@@ -159,13 +159,15 @@ function filterSetup(){
 
     fltr.find('.filter-item').removeClass('checked').find('input[type="checkbox"]').attr('checked', false);
 
-    lps = window.location.pathname.substr(1,3)
+    // cookie:   [" filter[poroda][Дуб]par=1", " filter[poroda][Орех]par=1"]
+    // pathname: /'par'ket.html
+    lps = window.location.pathname.substr(1,3) + '=1'
     fd = decodeURIComponent(document.cookie).split(';')
     for(i = 0; i < fd.length; i++){
         l = fd[i]
-        if((1 == l.indexOf('filter[') && (lps == l.slice(-3)))){
+        if((1 == l.indexOf('filter[') && (lps == l.slice(-5)))){
             if(!r) r = true
-            fltr.find('.filter-item input[name="'+l.substr(1, l.length-5)+'"]')
+            fltr.find('.filter-item input[name="'+l.substr(1, l.length-6)+'"]')
                 .click()
                 .attr('checked', true)
                 .parent()
@@ -184,7 +186,7 @@ function filterSetup(){
             if(old){
                 delCookie(a)
             } else {
-                document.cookie = encodeURIComponent(a) + '=' + lps
+                document.cookie = encodeURIComponent(a) + lps
             }
             return this.checked = !old;
         });
@@ -202,7 +204,7 @@ function filterSetup(){
         for(i = 0; i < fd.length; i++){
             l = fd[i]
             if(1 == l.indexOf('filter['))
-                delCookie(l.substr(1, l.length-5))
+                delCookie(l.substr(1, l.length-6))
         }
 
         onGetAjaxContent();
@@ -213,5 +215,10 @@ function filterSetup(){
 
 function delCookie(name)
 {
-    document.cookie = encodeURIComponent(name) + '=; expires=Thu, 01 Jan 1970 00:00:01 GMT;'
+// cookie:   [" filter[poroda][Дуб]par=1", " filter[poroda][Орех]par=1"]
+// name:     'filter[poroda][Дуб]'
+// pathname: /'par'ket.html
+    document.cookie = encodeURIComponent(name)
+        + window.location.pathname.substr(1,3)
+        + '=; expires=Thu, 01 Jan 1970 00:00:01 GMT;'
 }
