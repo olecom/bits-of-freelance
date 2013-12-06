@@ -164,6 +164,7 @@ function filterSetup(){
         if((1 == l.indexOf('filter[') && ('1' == l.slice(-1)))){
             if(!r) r = true
             fltr.find('.filter-item input[name="'+l.substr(1, l.length-3)+'"]')
+                .click()
                 .attr('checked', true)
                 .parent()
                     .toggleClass('checked')
