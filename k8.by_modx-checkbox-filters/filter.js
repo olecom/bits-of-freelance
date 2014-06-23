@@ -119,10 +119,11 @@ function submitFiltersForm() {
 
     if(ajax){//ole: ajax loading
         $('.product_block').css("opacity", 0.5)
-        ajax = window.location.origin + window.location.pathname + '?' + form.serialize()
+        ajax = window.location.href + '?' + form.serialize()
         $.ajax({
             url: ajax,
-            success: function(data) {
+            complete: function(data) {
+                data = data.responseText
                 $('.cont').html(data
                     .replace(/[\s\S]*<div class="cont"/m,'<div class="cont"')
                     .replace(/<!-- end cont -->[\s\S]*/m,'')
