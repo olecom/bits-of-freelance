@@ -185,7 +185,7 @@ var devel = true
             h = '+' + h.slice(0, h.length - 1).replace(/./g,'-') + '+---+'
             // ** body **
             s += ' #<br/>' + h + '<br/>|' ,j = 0
-            do {// show items in grid
+            if(todo.items.length) do {// show items in grid
                 el = todo.items[j]
                 for(i in schema_header){
                     // value
