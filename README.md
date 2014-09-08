@@ -11,4 +11,4 @@ Random bits done for partners (initially non for profit)
 Tests for job applicant
 =========
 
-* [October 2013] [JavaScript: todo_testing "Interactive TODO items" for (Belitsoft)](http://olecom.github.io/bits-of-freelance/#todo_Belitsoft)
+* [October 2013] [![image](http://vanilla-js.com/assets/button.png)](http://vanilla-js.com/) [JavaScript: todo_testing "Interactive TODO items" for (Belitsoft)](http://olecom.github.io/bits-of-freelance/#todo_Belitsoft)
