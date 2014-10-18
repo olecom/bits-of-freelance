@@ -7,6 +7,24 @@ $(document).ready(function(){
     $('.slider_arrow').on('click', prevent_slider_timeout)
     $('#spager a').on('click', prevent_slider_timeout)
 
+    /*  Stop slider on "About" links */
+    $('.breadcrumbs .link').on('click', function(){
+    if(0 < ole_slider_timeout){
+        clearTimeout(ole_slider_timeout)
+        ole_slider_timeout = 0
+        $('.close.section').on('click', function on_close(){
+            prevent_slider_timeout()
+            $('.close.section').off('click', on_close)
+        })
+    } else {
+        setTimeout(function(){
+            if($('div:not(:hidden)', $('#content_section')).length === 0){
+                prevent_slider_timeout()
+            }
+        }, 2048)
+    }
+})
+
     function prevent_slider_timeout(){
         clearTimeout(ole_slider_timeout)
         image_label();
