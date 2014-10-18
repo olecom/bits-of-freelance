@@ -1,4 +1,25 @@
 /* http://openini.by/parket/boen/fashion-new-2014.html */
+var ole_slider_timeout
+
+$(document).ready(function(){
+    prevent_slider_timeout()
+
+    $('.slider_arrow').on('click', prevent_slider_timeout)
+    $('#spager a').on('click', prevent_slider_timeout)
+
+    function prevent_slider_timeout(){
+        clearTimeout(ole_slider_timeout)
+        image_label();
+        resize_catalog();
+        ole_slider_timeout = setTimeout(function(){
+            prevent_slider_timeout()
+            $('#slider').cycle('next');
+            image_label();
+            resize_catalog();
+        }, 2048)
+    }
+});
+
 
 var catalog = $('#catalog');
 var last_element = $('#catalog li').eq(-2);
