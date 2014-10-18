@@ -9,6 +9,12 @@ $(function(){
             alert(reply.title + '\r\n' + reply.message);
         });
 
+        //Ограничиваем вводимые символы для VIN
+        $("#vin").bind("keypress", function(event) {
+            if (event.which <= 13) return true;
+            return /[0-9A-z]/.test(String.fromCharCode(event.which));
+        });
+
         $(function () {
         $("#select-1").selectbox({
             effect: "fade"
