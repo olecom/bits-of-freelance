@@ -7,9 +7,30 @@ $(function(){
            ,inp , sel1, sel2, sel3
 
         //Применяем плагин $.form к нашей форме и назначаем функцию после отправки
-        $('#myForm').ajaxForm(function(reply){
-            //У объекта reply будет следующая структура: {status: true, title: '', message: ''}
-            alert(reply.title + '\r\n' + reply.message);
+        form.ajaxForm({
+            beforeSubmit: function(){
+            var ok = sel1 + sel2 + sel3
+
+                form.find('input[type=text]').each(function(){
+                var el = $(this)
+
+                    if(el.val()){
+                        ++ok
+                    } else {
+                        el.addClass('error')
+                    }
+                })
+                if(8 == ok) return true
+
+                !sel1 && $(".select-1 .sbSelector").addClass('error')
+                !sel2 && $(".select-2 .sbSelector").addClass('error')
+                !sel3 && $(".select-3 .sbSelector").addClass('error')
+
+                return false
+            }
+            ,complete: function(){
+                form.html('DONE DONE DONE DONE DONE DONE DONE DONE DONE DONE DONE')
+            }
         });
 
         //Ограничиваем вводимые символы для VIN
