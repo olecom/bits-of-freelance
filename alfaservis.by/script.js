@@ -44,7 +44,7 @@ $(function(){
         function check_empty(){
         var el = $(this)
 
-            el.val() && ++inp
+            el.val() && el.removeClass('error') && ++inp
         }
 
         setInterval(function(){
@@ -65,6 +65,7 @@ $(function(){
                  if(v){
                     sel1 = 1
                     $(".select-1 .sbSelector").removeClass('notvalid')
+                    $(".select-1 .sbSelector").removeClass('error')
                  } else {
                     sel1 = 0
                     $(".select-1 .sbSelector").addClass('notvalid')
@@ -82,6 +83,7 @@ $(function(){
                  if(v){
                     sel2 = 1
                     $(".select-2 .sbSelector").removeClass('notvalid')
+                    $(".select-2 .sbSelector").removeClass('error')
                  } else {
                     sel2 = 0
                     $(".select-2 .sbSelector").addClass('notvalid')
@@ -99,6 +101,7 @@ $(function(){
                  if(v){
                     sel3 = 1
                     $(".select-3 .sbSelector").removeClass('notvalid')
+                    $(".select-3 .sbSelector").removeClass('error')
                  } else {
                     sel2 = 0
                     $(".select-3 .sbSelector").addClass('notvalid')
