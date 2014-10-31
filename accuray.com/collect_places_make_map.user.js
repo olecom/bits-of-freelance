@@ -38,6 +38,14 @@ var x, el = gi("____CAP")
         qs('body').appendChild(x)
 
         el = cl("div")
+        el.onclick = onExport
+        el.setAttribute("style", "color:white;font-size:10pt;" +
+"background-color:green; padding:2px; border: 2px dashed;"
+        )
+        el.innerHTML = '== Export Collected =='
+        x.appendChild(el)
+
+        el = cl("div")
         el.onclick = onStartStop
         el.setAttribute("id", "____CAP")
         el.setAttribute("style", "font-size:10pt;color:white;background-color:red;padding:7px")
@@ -55,6 +63,62 @@ var x, el = gi("____CAP")
         el.innerHTML += msg
     }
     return el
+}
+
+function onExport(){
+var me = this, el
+
+    me.onclick = function(){
+        el.focus()
+        el.select()
+    }
+    me.innerHTML = 'Please wait...'
+    el = gi("____CAP")
+    el.innerHTML = '' +
+'  <textarea style="position:absolute; top:-12px; width:1px;height:1px;">' +
+'     copy|paste' +
+'  </textarea>'
+    el = el.children['0']//textarea
+
+    return setTimeout(exportData, 512)
+
+    function exportData(){
+    var pg, ar, t, i, j, s
+       ,re = new RegExp(
+'<div class="address-line-1">([^<]*)<[/]div>[^<]*' +// 1
+'<div class="address-line-2">([^<]*)<[/]div>[^<]*' +// 2
+'<div class="address-line-3">([^<]*)<[/]div>[^<]*' +// 3
+'<div class="address-city-state-zip">([^,]*), *([^<]*)<[/]div>[^<]*' +// 4, 5
+'<div class="address-country">([^<]*)<[/]div>'     // 6
+       )
+
+        s = '', i = 0
+        for(t in store) if('__' == t.slice(0, 2) && (pg = JSON.parse(store[t]))){
+            for(j = 0; j < pg.length; ++j){
+                ar = pg[j].match(re)
+                if(!ar) continue
+                i++
+                s +=(
+ar[4] +'\t'+ ar[6] +'\t'+ ar[1] +'\t'+ ar[2] +'\t'+ ar[3] +'\t'+ ar[5] +'\n'
+                )
+            }
+        }
+        el.onkeydown = onkeydown
+        me.innerHTML =
+'Press CTRL + C to copy ' + i +' results into clipboard'
+        el.value = s
+        el.focus()
+        el.select()
+    }
+
+    function onkeydown(ev){
+        if(ev.ctrlKey && 67 == ev.keyCode){
+            setTimeout(function clean_export(){
+                me.innerHTML = 'Copied'
+                el = me = null
+            }, 12)
+        }
+    }
 }
 
 function onStartStop(){
