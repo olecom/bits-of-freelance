@@ -8,7 +8,95 @@
 // ==/UserScript==
 
 function uglify_js(w ,doc ,con ,store){
-    return
+var v, current_page = qs('.pager-current').innerHTML
+
+    v = store['____CAPn']
+    if(!v){
+        con.log('goto the first page')
+        store['____CAPn'] = '0'
+        return w.location = '/treatment-centers'
+    } else if(v != current_page){// goto to last processed page
+        return w.location = '/treatment-centers?page=' + (+v - 1)
+    }
+    v = null
+
+    if(store['____CAP']){
+        con.log('process this page')
+        doThis_GoNext()
+    }
+    return info()
+
+function info(msg){
+var x, el = gi("____CAP")
+
+    if(!el){
+        x = cl("div")
+        x.setAttribute("style",
+            "font-size:10pt; background-color:#77FF00; position:fixed;" +
+            "top:21px;left:7px;z-index:77;padding:2px"
+        )
+        qs('body').appendChild(x)
+
+        el = cl("div")
+        el.onclick = onStartStop
+        el.setAttribute("id", "____CAP")
+        el.setAttribute("style", "font-size:10pt;color:white;background-color:red;padding:7px")
+        el.innerHTML = '<span style="color:blue">== Auto Collecting ==</span><br>'
++'<div>'
++ "To <b>" + (store['____CAP'] ? 'STOP' : 'Start') + "</b> collecting info press ME!"
++ "<br>"
++ "Current page: " + current_page
++ "<br>"
++ "Last page: " + store['____CAPn']
++ '</div>'
+        x.appendChild(el)
+    }
+    if(msg){
+        el.innerHTML += msg
+    }
+    return el
+}
+
+function onStartStop(){
+var sts = store['____CAP']
+
+    if(!sts){
+        con.log('start')
+        store['____CAP'] = 'runs'
+
+        return doThis_GoNext()
+    }
+    con.log('stop')
+    return delete store['____CAP']
+}
+
+function doThis_GoNext(){
+var i, el, items
+
+    el = qa('.location-address')
+    if(el.length){
+        items = new Array(el.length)
+        for(i = 0; i < el.length; ++i){
+            items[i] = el[i].innerHTML.replace(/   */g, ' ').replace(/\n/g, '')
+        }
+        store['__' + current_page] = JSON.stringify(items)
+        store['____CAPn'] = current_page
+    }
+
+    el = qs('.pager-next')
+    if(el){
+        con.log('goto next page')
+        el = el.children[0]
+        el.focus()
+        return setTimeout(function(){
+            el.dispatchEvent(mkClick())
+        }, 1024)
+    }
+    con.log('stop last page')
+    delete store['____CAP']
+
+    return con.log('stop: the end')
+}
 
 function mkClick(){
     var ev = ce("MouseEvents")
