@@ -63,18 +63,44 @@ var x, el = gi("____CAP")
 
         el = cl("div")
         el.onclick = onShowGeoLoc
-        //el.setAttribute("id", "____GEO")
         el.innerHTML = '== GEO =='
-+'<br><textarea id="____GEO" style="width:256px;height:77px;"></textarea>'
         x.appendChild(el)
         if(!store['____GEO']){
             store['____GEO'] = '0'
         }
+
+        el = cl("div")
+        el.onclick = onExportGeoMsg
+        el.innerHTML = '<div id="____GEOMSG">== Export GEO ==</div>'
++'<br><textarea id="____GEOEXP" style="width:256px;height:77px;"></textarea>'
+        x.appendChild(el)
     }
     if(msg){
         el.innerHTML += msg
     }
     return el
+}
+
+function onExportGeoMsg(){
+    gi('____GEOMSG').innerHTML = 'Please wait...'
+    setTimeout(onExportGeo, 512)
+}
+
+function onExportGeo(){
+var i, d = '', el = gi('____GEOEXP'), geo
+
+    for(i = 1; i < data.length - 1; ++i){// skip last empty string
+        if((geo = JSON.parse(store['_G_' + i]).results[0])){
+            d += JSON.stringify(geo.geometry.location) + '\t' + geo.formatted_address + '\n'
+        } else {
+            d += '\t-no-info-\n'//empty item
+        }
+    }
+    el.value = d
+    el.focus()
+    el.select()
+
+    return
 }
 
 function onShowGeoLoc(){
