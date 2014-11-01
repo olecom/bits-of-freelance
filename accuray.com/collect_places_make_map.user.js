@@ -56,7 +56,7 @@ var x, el = gi("____CAP")
 + "Current page: " + current_page
 + "<br>"
 + "Last page: " + store['____CAPn']
-+ '</div>'
++'</div>'
         x.appendChild(el)
     }
     if(msg){
@@ -79,8 +79,9 @@ var me = this, el
 '     copy|paste' +
 '  </textarea>'
     el = el.children['0']//textarea
+    setTimeout(exportData, 512)
 
-    return setTimeout(exportData, 512)
+    return
 
     function exportData(){
     var pg, ar, t, i, j, s
@@ -109,6 +110,8 @@ ar[4] +'\t'+ ar[6] +'\t'+ ar[1] +'\t'+ ar[2] +'\t'+ ar[3] +'\t'+ ar[5] +'\n'
         el.value = s
         el.focus()
         el.select()
+
+        return
     }
 
     function onkeydown(ev){
