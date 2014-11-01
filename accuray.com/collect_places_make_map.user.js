@@ -96,12 +96,28 @@ var i, el, map, geocode = getGeocode()
     })
 
     for(i = 0; i < geocode.length;){
-        new google.maps.Marker({
+        el = new google.maps.Marker({
             map: map,
             position: geocode[i++],
             title: geocode[i++],
             icon:'http://accuray.com/sites/default/files/favicon.ico'
         })
+        google.maps.event.addListener(el, 'click', popup)
+    }
+    el = null
+    return
+
+    function popup(){
+    var t = this
+
+        el && el.close()
+        el = new google.maps.InfoWindow({
+            content:'<img src="' + t.icon + '"></img>' +
+            '<div style="font-size: 10pt; width:300px;height:' +
+            (t.title.length > 50 ? 66 : 33) + 'px;">' + t.title +
+            '</div>'
+        })
+        el.open(map, t)
     }
 }
 
