@@ -17,7 +17,7 @@ var v, current_page = qs('.pager-current').innerHTML
         con.log('goto the first page')
         store['____CAPn'] = '0'
         return w.location = '/treatment-centers'
-    } else if(v != current_page){// goto to last processed page
+    } else if('0' != v && v != current_page){// goto to last processed page
         return w.location = '/treatment-centers?page=' + (+v - 1)
     }
     v = null
